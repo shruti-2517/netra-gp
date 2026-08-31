@@ -1,0 +1,57 @@
+[
+  {
+    "camera_id": "CAM-AHM-001",
+    "name": "SG Highway - Iscon Crossroad",
+    "department": "Police / Traffic",
+    "city": "Ahmedabad",
+    "latitude": 23.0298,
+    "longitude": 72.5074,
+    "stream_url": "sample_feeds/iscon_traffic.mp4",
+    "type": "IP ANPR Camera",
+    "status": "ACTIVE"
+  },
+  {
+    "camera_id": "CAM-GND-002",
+    "name": "GH-5 Circle",
+    "department": "Municipal Corporation",
+    "city": "Gandhinagar",
+    "latitude": 23.2156,
+    "longitude": 72.6369,
+    "stream_url": "sample_feeds/gnd_circle.mp4",
+    "type": "Fixed IP Camera",
+    "status": "ACTIVE"
+  },
+  {
+    "camera_id": "CAM-SRT-003",
+    "name": "Ring Road - Textile Market",
+    "department": "Smart City VMS",
+    "city": "Surat",
+    "latitude": 21.1959,
+    "longitude": 72.8302,
+    "stream_url": "sample_feeds/surat_ringroad.mp4",
+    "type": "PTZ Camera",
+    "status": "ACTIVE"
+  },
+  {
+    "camera_id": "CAM-BRD-004",
+    "name": "Alkapuri Underpass",
+    "department": "Home Department",
+    "city": "Vadodara",
+    "latitude": 22.3072,
+    "longitude": 73.1812,
+    "stream_url": "sample_feeds/vadodara_alkapuri.mp4",
+    "type": "ANPR Camera",
+    "status": "ACTIVE"
+  },
+  {
+    "camera_id": "CAM-RJK-005",
+    "name": "Kalawad Road",
+    "department": "RTO Checkpost",
+    "city": "Rajkot",
+    "latitude": 22.2916,
+    "longitude": 70.7932,
+    "stream_url": "sample_feeds/rajkot_checkpost.mp4",
+    "type": "RTO Speed Cam",
+    "status": "ACTIVE"
+  }
+]

@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+
+# CV / ML Models & Weights
+*.pt
+*.onnx
+*.engine
+*.weights
+
+# Environment variables
+.env
+.env.local
+
+# Node.js / Frontend
+node_modules/
+dist/
+build/
+.next/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Database & Storage
+*.sqlite3
+*.db
+pgdata/
+logs/
+downloads/
+temp/
