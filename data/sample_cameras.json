@@ -6,7 +6,7 @@
     "city": "Ahmedabad",
     "latitude": 23.0298,
     "longitude": 72.5074,
-    "stream_url": "sample_feeds/iscon_traffic.mp4",
+    "stream_url": "data/sample_feeds/traffic1.mp4",
     "type": "IP ANPR Camera",
     "status": "ACTIVE"
   },
@@ -17,7 +17,7 @@
     "city": "Gandhinagar",
     "latitude": 23.2156,
     "longitude": 72.6369,
-    "stream_url": "sample_feeds/gnd_circle.mp4",
+    "stream_url": "data/sample_feeds/120678-721759752_medium.mp4",
     "type": "Fixed IP Camera",
     "status": "ACTIVE"
   },
@@ -28,7 +28,7 @@
     "city": "Surat",
     "latitude": 21.1959,
     "longitude": 72.8302,
-    "stream_url": "sample_feeds/surat_ringroad.mp4",
+    "stream_url": "data/sample_feeds/153283-804933523_medium.mp4",
     "type": "PTZ Camera",
     "status": "ACTIVE"
   },
@@ -39,7 +39,7 @@
     "city": "Vadodara",
     "latitude": 22.3072,
     "longitude": 73.1812,
-    "stream_url": "sample_feeds/vadodara_alkapuri.mp4",
+    "stream_url": "data/sample_feeds/154195-807166827_medium.mp4",
     "type": "ANPR Camera",
     "status": "ACTIVE"
   },
@@ -50,7 +50,7 @@
     "city": "Rajkot",
     "latitude": 22.2916,
     "longitude": 70.7932,
-    "stream_url": "sample_feeds/rajkot_checkpost.mp4",
+    "stream_url": "data/sample_feeds/84222-584891447_medium.mp4",
     "type": "RTO Speed Cam",
     "status": "ACTIVE"
   }

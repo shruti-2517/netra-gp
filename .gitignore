@@ -38,3 +38,16 @@ pgdata/
 logs/
 downloads/
 temp/
+
+# Media & Video Feeds
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
+data/sample_feeds/*.mp4
+data/sample_feeds/*.avi
+data/sample_feeds/*.mov
+data/sample_feeds/*.mkv
+data/sample_feeds/*.webm
+

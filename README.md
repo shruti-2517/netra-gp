@@ -23,8 +23,7 @@ gp_hackathon/
 ├── cv_engine/          # Computer Vision engine (OpenCV feed reader, YOLOv8 license plate detector, OCR)
 ├── frontend/           # GIS Leaflet Dashboard, Live Video Wall, Real-Time Alert Feed & Route Tracing
 ├── data/               # Seed datasets (sample cameras across Gujarat, watchlist vehicles)
-├── docs/               # High-Level Design (HLD) document & Architecture Diagrams
-└── docker-compose.yml  # Docker environment (PostgreSQL + PostGIS)
+└── docs/               # High-Level Design (HLD) document & Architecture Diagrams
 ```
 
 ---
@@ -34,12 +33,10 @@ gp_hackathon/
 ### Prerequisites
 - Python 3.10+
 - Node.js 18+
-- Docker & Docker Compose
+- PostgreSQL database
 
 ### 1. Database Infrastructure
-```bash
-docker-compose up -d
-```
+Ensure PostgreSQL is running locally on port 5432 with database `gujarat_cctv_db` (or set `DATABASE_URL` environment variable).
 
 ### 2. Backend Setup
 ```bash
