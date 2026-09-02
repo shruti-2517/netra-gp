@@ -104,6 +104,12 @@ def get_recent_detections(
 def get_alerts(limit: int = Query(30, le=100), db: Session = Depends(get_db)):
     return db.query(Alert).order_by(Alert.id.desc()).limit(limit).all()
 
+@router.delete("/alerts", status_code=200)
+def clear_all_alerts(db: Session = Depends(get_db)):
+    count = db.query(Alert).delete()
+    db.commit()
+    return {"message": "All alerts cleared successfully", "count": count}
+
 @router.get("/tracking/{license_plate}", response_model=RouteTraceResponse)
 def trace_vehicle_route(license_plate: str, db: Session = Depends(get_db)):
     """
@@ -112,13 +118,11 @@ def trace_vehicle_route(license_plate: str, db: Session = Depends(get_db)):
     """
     clean_target = license_plate.replace("-", "").replace(" ", "").upper()
     
-    # Query all detections matching the plate number
     detections = db.query(DetectionEvent).filter(
         DetectionEvent.license_plate.ilike(f"%{clean_target}%")
     ).order_by(DetectionEvent.id.asc()).all()
 
     if not detections:
-        # Check canonical match fallback
         all_events = db.query(DetectionEvent).all()
         detections = [e for e in all_events if clean_target in e.license_plate.replace("-", "").replace(" ", "").upper()]
 

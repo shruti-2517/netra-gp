@@ -25,16 +25,16 @@ flowchart TD
     end
 
     subgraph Ingestion ["Ingestion & Analytics Layer"]
-        StreamReader[OpenCV / FFmpeg Stream Ingestion]
+        StreamReader[OpenCV / FFmpeg Stream Ingestion - RTSP over TCP]
         YOLO[YOLOv8 License Plate Detector]
         OCR[EasyOCR / PaddleOCR Text Extraction]
     end
 
     subgraph Backend ["Core API & Intelligence Engine"]
-        FastAPI[FastAPI Gateway]
+        FastAPI[FastAPI Gateway /api/ingest]
         Matcher[Watchlist Real-Time Correlation Engine]
         DB[(PostgreSQL + PostGIS Database)]
-        WS[WebSocket Alert Broadcaster]
+        WS[WebSocket Alert Broadcaster /api/v1/ws/alerts]
     end
 
     subgraph Operations ["Command & Control Center UI"]
@@ -68,9 +68,11 @@ flowchart TD
 - **Vehicle & Plate Detection**: YOLOv8 pre-trained model cropped to license plate regions of interest (ROI).
 - **Text Recognition**: EasyOCR with preprocessing filters (grayscale conversion, adaptive thresholding, bilateral filtering).
 - **Format Normalization**: Regex parser converting plate variants to standard Indian syntax (`GJ-01-AB-1234`).
+- **Timing Engine**: Driven strictly by Presentation Timestamps (`pts_ms`), ensuring zero reliance on arrival wall-clock or frame rate assumptions.
 
 ### 3.3 Real-Time Watchlist Correlation Engine
 - Cross-references incoming plate reads against a high-speed in-memory cache and PostgreSQL watchlist database.
+- Supports exact matching, canonical OCR confusion normalization (`0/O`, `1/I`, `8/B`), and Levenshtein edit distance.
 - Triggers alert notifications with threat classification (`CRITICAL`, `HIGH`, `MEDIUM`).
 - Emits real-time WebSocket frames to connected Command Center frontends.
 
@@ -86,3 +88,11 @@ To scale from prototype (~50 cameras) to statewide deployment (~80,000 cameras):
 2. **GPU Analytics Cluster**: Kubernetes-managed GPU worker pools (NVIDIA Triton Inference Server).
 3. **Decoupled Storage**: Multi-tier retention (Hot S3-compatible Object Storage for recent clips, Cold Tape/Glacier for long-term retention).
 4. **Security & RBAC**: OAuth2 / OIDC with fine-grained department-level access control.
+
+---
+
+## 5. Technical Prerequisites & Departmental Integration Feasibility
+To integrate new departmental cameras into the NETRA-GP gateway:
+1. **Network Connectivity**: Network connectivity allowing RTSP over TCP on port 8554, WebRTC (WHEP) on 8889, or HLS on 80/443.
+2. **Dynamic Catalogue Contract**: Departmental VMS or gateway must register endpoints with `/api/ingest`.
+3. **Key Metadata Required**: Camera ID, City, Geo-coordinates (Lat/Lng), Department Owner, Stream URI, and Video Codec (H.264/H.265).

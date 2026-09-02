@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import Header from './components/Header';
 import GisMap from './components/GisMap';
+import VideoWall from './components/VideoWall';
+import CameraRegistry from './components/CameraRegistry';
+import WatchlistManager from './components/WatchlistManager';
+import RouteTracker from './components/RouteTracker';
 import AlertFeed from './components/AlertFeed';
 
 export default function App() {
@@ -9,28 +13,13 @@ export default function App() {
   return (
     <div className="app-container">
       <Header activeTab={activeTab} setActiveTab={setActiveTab} />
+      
       <div className="main-content">
         {activeTab === 'map' && <GisMap />}
-        {activeTab === 'videowall' && (
-          <div style={{ flex: 1, padding: 24, color: '#8a99ad', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            [ Multi-Camera Grid Video Wall - 4 Feeds Active ]
-          </div>
-        )}
-        {activeTab === 'registry' && (
-          <div style={{ flex: 1, padding: 24, color: '#8a99ad', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            [ Camera Metadata Registry & Bulk Import View ]
-          </div>
-        )}
-        {activeTab === 'watchlist' && (
-          <div style={{ flex: 1, padding: 24, color: '#8a99ad', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            [ Watchlist Database Management & Hotlist Vehicles ]
-          </div>
-        )}
-        {activeTab === 'tracking' && (
-          <div style={{ flex: 1, padding: 24, color: '#8a99ad', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            [ Vehicle Route History & Spatial Timeline Reconstruction ]
-          </div>
-        )}
+        {activeTab === 'videowall' && <VideoWall />}
+        {activeTab === 'registry' && <CameraRegistry />}
+        {activeTab === 'watchlist' && <WatchlistManager />}
+        {activeTab === 'tracking' && <RouteTracker />}
 
         <AlertFeed />
       </div>

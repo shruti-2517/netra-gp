@@ -1,53 +1,97 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Shield, Map, Video, Database, AlertOctagon, Route, Clock } from 'lucide-react';
 
 export default function Header({ activeTab, setActiveTab }) {
+  const [timeStr, setTimeStr] = useState('');
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setTimeStr(now.toLocaleTimeString('en-US', { hour12: false }) + ' IST');
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <header className="header">
+      {/* Brand Identity */}
       <div className="brand">
-        <span className="brand-badge">NETRA-GP</span>
+        <div style={{
+          background: '#0284c7',
+          padding: '6px 8px',
+          borderRadius: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <Shield size={20} color="#ffffff" />
+        </div>
         <div>
-          <h1 className="brand-title">NETRA-GP Intelligence Command</h1>
-          <p className="brand-subtitle">Networked Ecosystem for Traffic & Reconnaissance Analytics (~80,000 Camera Scalability Model)</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className="brand-title">NETRA-GP</span>
+            <span className="brand-badge">GUJARAT POLICE</span>
+          </div>
+          <p className="brand-subtitle">Networked Ecosystem for Traffic & Reconnaissance Analytics</p>
         </div>
       </div>
 
+      {/* Navigation Tabs */}
       <nav className="nav-tabs">
         <button 
           className={`tab-btn ${activeTab === 'map' ? 'active' : ''}`}
           onClick={() => setActiveTab('map')}
         >
-          🌐 GIS Command Map
+          <Map size={15} /> GIS Command Map
         </button>
         <button 
           className={`tab-btn ${activeTab === 'videowall' ? 'active' : ''}`}
           onClick={() => setActiveTab('videowall')}
         >
-          📹 Live Video Wall
+          <Video size={15} /> Live Video Wall
         </button>
         <button 
           className={`tab-btn ${activeTab === 'registry' ? 'active' : ''}`}
           onClick={() => setActiveTab('registry')}
         >
-          📹 Camera Registry
+          <Database size={15} /> Camera Registry
         </button>
         <button 
           className={`tab-btn ${activeTab === 'watchlist' ? 'active' : ''}`}
           onClick={() => setActiveTab('watchlist')}
         >
-          🚨 Watchlist DB
+          <AlertOctagon size={15} /> Watchlist DB
         </button>
         <button 
           className={`tab-btn ${activeTab === 'tracking' ? 'active' : ''}`}
           onClick={() => setActiveTab('tracking')}
         >
-          🔍 Vehicle Route Tracker
+          <Route size={15} /> Vehicle Route Trace
         </button>
       </nav>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      {/* System Telemetry & Clock */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
         <div className="status-pill status-active">
           <span className="status-dot"></span>
-          ANPR ENGINE ONLINE
+          <span>5 Cameras Active</span>
+        </div>
+
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          background: 'rgba(255, 255, 255, 0.04)',
+          padding: '5px 10px',
+          borderRadius: '6px',
+          fontSize: '12px',
+          fontFamily: 'var(--font-mono)',
+          color: '#94a3b8',
+          border: '1px solid rgba(255, 255, 255, 0.08)'
+        }}>
+          <Clock size={14} />
+          <span>{timeStr || '16:10:00 IST'}</span>
         </div>
       </div>
     </header>

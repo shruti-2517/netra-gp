@@ -1,9 +1,18 @@
-from fastapi import FastAPI
+import logging
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
 from app.config import settings
-from app.database import Base, engine
+from app.database import Base, engine, SessionLocal, get_db
+from app.models import Camera
+from app.seed import seed_initial_data
+from app.services.websocket_manager import manager
+from app.api.v1.routers import cameras, watchlist, detections, reports
 
-# Create tables on startup (in production, use Alembic)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("NETRA-GP-Backend")
+
+# Create database tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
@@ -20,12 +29,73 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Seed database on startup if empty
+@app.on_event("startup")
+def startup_event():
+    db = SessionLocal()
+    try:
+        seed_initial_data(db)
+    finally:
+        db.close()
+
+# Include API Routers
+app.include_router(cameras.router, prefix=settings.API_V1_STR)
+app.include_router(watchlist.router, prefix=settings.API_V1_STR)
+app.include_router(detections.router, prefix=settings.API_V1_STR)
+app.include_router(reports.router, prefix=settings.API_V1_STR)
+
+# Official Spec Contract: Catalogue API Endpoint (/api/ingest)
+@app.get("/api/ingest")
+def get_ingest_catalogue(db: Session = Depends(get_db)):
+    """
+    Official Specification Endpoint returning dynamic camera catalogue,
+    codec metadata, live status, and RTSP / WebRTC (WHEP) / HLS endpoints.
+    """
+    db_cams = db.query(Camera).all()
+    catalogue = []
+    for c in db_cams:
+        cam_id = c.camera_id
+        # Derive stream endpoints per protocol standard
+        rtsp_url = c.stream_url if c.stream_url.startswith("rtsp://") else f"rtsp://localhost:8554/stream/{cam_id}"
+        whep_url = f"http://localhost:8889/stream/{cam_id}/whep"
+        hls_url = f"http://localhost/live/stream/{cam_id}/index.m3u8"
+
+        catalogue.append({
+            "id": cam_id,
+            "camera_id": cam_id,
+            "name": c.name,
+            "city": c.city,
+            "department": c.department,
+            "latitude": c.latitude,
+            "longitude": c.longitude,
+            "codec": "H.264", # Supports mixed H.264 / H.265
+            "live_status": c.status.lower(),
+            "stream_url": c.stream_url,
+            "endpoints": {
+                "rtsp": rtsp_url,
+                "whep": whep_url,
+                "hls": hls_url
+            }
+        })
+    return catalogue
+
+# Real-Time WebSocket Alerts Endpoint
+@app.websocket("/api/v1/ws/alerts")
+async def websocket_alerts(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+
 @app.get("/")
 def root():
     return {
         "status": "online",
         "system": settings.PROJECT_NAME,
         "version": "1.0.0",
+        "catalogue_endpoint": "/api/ingest",
         "documentation": "/docs"
     }
 
