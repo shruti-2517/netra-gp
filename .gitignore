@@ -39,15 +39,11 @@ logs/
 downloads/
 temp/
 
-# Media & Video Feeds
-*.mp4
+# Media & Video Feeds (Allow sample_feeds)
 *.avi
 *.mov
 *.mkv
 *.webm
-data/sample_feeds/*.mp4
-data/sample_feeds/*.avi
-data/sample_feeds/*.mov
-data/sample_feeds/*.mkv
-data/sample_feeds/*.webm
+!data/sample_feeds/*.mp4
+
 
