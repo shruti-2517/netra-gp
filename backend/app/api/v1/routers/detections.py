@@ -1,4 +1,5 @@
 import uuid
+import time
 import hashlib
 import datetime
 import base64
@@ -20,6 +21,9 @@ from app.services.websocket_manager import manager
 logger = logging.getLogger("DetectionsRouter")
 
 router = APIRouter(tags=["Detections & Alerts"])
+
+# In-memory deduplication cache: key (plate-camera) -> timestamp
+_last_alert_dispatch = {}
 
 # Indian License Plate Regex Patterns
 INDIAN_PLATE_REGEX = re.compile(r'([A-Z]{2}\s*[0-9]{1,2}\s*[A-Z]{1,3}\s*[0-9]{3,4})')
@@ -111,38 +115,46 @@ async def ingest_detection(detection_in: DetectionEventCreate, db: Session = Dep
         db.add(cert)
         db.commit()
 
-    # 6. Dispatch WebSocket Alerts
+    # 6. Dispatch WebSocket Alerts (Deduplicated with 15s window)
     if is_hit or is_speed_violation:
-        camera = db.query(Camera).filter(Camera.camera_id == detection_in.camera_id).first()
-        city_name = camera.city if camera else "Gujarat Highway"
+        global _last_alert_dispatch
+        now_ts = time.time()
+        dedup_key = f"{detection_in.license_plate}-{detection_in.camera_id}"
         
-        reason = matched_vehicle.reason if is_hit else f"Overspeeding Violation: Recorded {speed_kmh:.1f} km/h (Limit: 80 km/h)"
-        threat_level = threat if is_hit else "WARNING"
+        if now_ts - _last_alert_dispatch.get(dedup_key, 0) > 15.0:
+            _last_alert_dispatch[dedup_key] = now_ts
+            
+            camera = db.query(Camera).filter(Camera.camera_id == detection_in.camera_id).first()
+            city_name = camera.city if camera else "Gujarat Highway"
+            
+            reason = matched_vehicle.reason if is_hit else f"Overspeeding Violation: Recorded {speed_kmh:.1f} km/h (Limit: 80 km/h)"
+            threat_level = threat if is_hit else "WARNING"
 
-        alert = Alert(
-            alert_id=f"ALT-{uuid.uuid4().hex[:8].upper()}",
-            detection_id=event.id,
-            license_plate=detection_in.license_plate,
-            threat_level=threat_level,
-            reason=reason,
-            camera_id=detection_in.camera_id,
-            city=city_name,
-            timestamp=detection_in.timestamp
-        )
-        db.add(alert)
-        db.commit()
+            alert = Alert(
+                alert_id=f"ALT-{uuid.uuid4().hex[:8].upper()}",
+                detection_id=event.id,
+                license_plate=detection_in.license_plate,
+                threat_level=threat_level,
+                reason=reason,
+                camera_id=detection_in.camera_id,
+                city=city_name,
+                timestamp=detection_in.timestamp
+            )
+            db.add(alert)
+            db.commit()
 
-        # Broadcast payload
-        await manager.broadcast({
-            "event": "WATCHLIST_ALERT" if is_hit else "SPEED_VIOLATION_ALERT",
-            "alert_id": alert.alert_id,
-            "license_plate": alert.license_plate,
-            "threat_level": alert.threat_level,
-            "reason": alert.reason,
-            "camera_id": alert.camera_id,
-            "city": alert.city,
-            "timestamp": alert.timestamp
-        })
+            # Broadcast payload
+            await manager.broadcast({
+                "event": "WATCHLIST_ALERT" if is_hit else "SPEED_VIOLATION_ALERT",
+                "alert_id": alert.alert_id,
+                "license_plate": alert.license_plate,
+                "threat_level": alert.threat_level,
+                "reason": alert.reason,
+                "camera_id": alert.camera_id,
+                "city": alert.city,
+                "speed_kmh": round(speed_kmh, 1) if speed_kmh else None,
+                "timestamp": alert.timestamp
+            })
 
     return event
 

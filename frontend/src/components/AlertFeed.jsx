@@ -1,13 +1,33 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, ChevronRight, ChevronLeft, Trash2, ShieldAlert, Filter, AlertTriangle, Zap } from 'lucide-react';
+import { Bell, ChevronRight, ChevronLeft, Trash2, ShieldAlert, AlertTriangle, Zap, Volume2, VolumeX, Radio } from 'lucide-react';
 
 export default function AlertFeed({ onWsStatusChange }) {
   const [alerts, setAlerts] = useState([]);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [filterSeverity, setFilterSeverity] = useState('ALL'); // 'ALL' or 'HIGH_ONLY'
   const [newAlertToast, setNewAlertToast] = useState(null);
+  const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   const wsRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
+
+  // Sound chime
+  const playAlertSound = () => {
+    if (!isSoundEnabled) return;
+    try {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, audioCtx.currentTime); // A5 note
+      osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.25);
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.25);
+    } catch (e) {}
+  };
 
   // 1. Fetch latest alerts from REST API
   const fetchAlerts = () => {
@@ -26,7 +46,7 @@ export default function AlertFeed({ onWsStatusChange }) {
   useEffect(() => {
     fetchAlerts();
 
-    // Periodic Background Sync (every 2 seconds fallback guarantee)
+    // Periodic Background Sync (every 2 seconds)
     const pollInterval = setInterval(fetchAlerts, 2000);
 
     const connectWS = () => {
@@ -40,7 +60,6 @@ export default function AlertFeed({ onWsStatusChange }) {
 
         ws.onclose = () => {
           if (onWsStatusChange) onWsStatusChange(false);
-          // Auto reconnect after 2.5s
           reconnectTimeoutRef.current = setTimeout(connectWS, 2500);
         };
 
@@ -53,10 +72,16 @@ export default function AlertFeed({ onWsStatusChange }) {
           try {
             const payload = JSON.parse(event.data);
             if (payload.license_plate) {
-              setAlerts(prev => [payload, ...prev]);
-              // Trigger Live Toast notification
+              setAlerts(prev => {
+                // Avoid instant UI duplicates
+                const exists = prev.some(a => a.alert_id === payload.alert_id || (a.license_plate === payload.license_plate && a.camera_id === payload.camera_id && Date.now() - new Date(a.timestamp).getTime() < 10000));
+                if (exists) return prev;
+                return [payload, ...prev];
+              });
+              
               setNewAlertToast(payload);
-              setTimeout(() => setNewAlertToast(null), 4000);
+              playAlertSound();
+              setTimeout(() => setNewAlertToast(null), 4500);
             }
           } catch (err) {}
         };
@@ -73,7 +98,7 @@ export default function AlertFeed({ onWsStatusChange }) {
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
       if (wsRef.current) wsRef.current.close();
     };
-  }, []);
+  }, [isSoundEnabled]);
 
   const handleClearAlerts = () => {
     setAlerts([]);
@@ -90,7 +115,7 @@ export default function AlertFeed({ onWsStatusChange }) {
 
   return (
     <div style={{
-      width: isCollapsed ? '48px' : '340px',
+      width: isCollapsed ? '48px' : '360px',
       background: '#ffffff',
       borderLeft: '1px solid #c4c6cf',
       display: 'flex',
@@ -104,35 +129,35 @@ export default function AlertFeed({ onWsStatusChange }) {
       {newAlertToast && !isCollapsed && (
         <div style={{
           position: 'absolute',
-          top: '50px',
+          top: '55px',
           left: '10px',
           right: '10px',
-          background: '#ba1a1a',
+          background: newAlertToast.threat_level === 'CRITICAL' ? '#ba1a1a' : '#904d00',
           color: '#ffffff',
-          padding: '10px',
-          borderRadius: '4px',
+          padding: '12px',
+          borderRadius: '6px',
           zIndex: 1000,
-          boxShadow: '0 4px 12px rgba(186, 26, 26, 0.35)',
+          boxShadow: '0 4px 16px rgba(0, 32, 69, 0.35)',
           animation: 'pulse 1s infinite alternate',
           fontSize: '11px',
           fontFamily: 'var(--font-headline)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 700 }}>
-            <span>🚨 INCOMING LIVE TARGET ALERT!</span>
-            <span style={{ fontFamily: 'var(--font-mono)' }}>JUST NOW</span>
+            <span>🚨 LIVE TARGET INTERCEPTED</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', opacity: 0.9 }}>JUST NOW</span>
           </div>
-          <div style={{ fontSize: '13px', fontWeight: 800, marginTop: '2px', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '14px', fontWeight: 800, margin: '4px 0', fontFamily: 'var(--font-mono)' }}>
             {newAlertToast.license_plate}
           </div>
-          <div style={{ fontSize: '10px', opacity: 0.9 }}>
-            {newAlertToast.reason} ({newAlertToast.camera_id})
+          <div style={{ fontSize: '11px', opacity: 0.95 }}>
+            {newAlertToast.reason}
           </div>
         </div>
       )}
 
       {/* Alert Header */}
       <div style={{
-        padding: '10px 14px',
+        padding: '12px 14px',
         borderBottom: '1px solid #e0e3e5',
         background: '#f2f4f6',
         display: 'flex',
@@ -144,46 +169,74 @@ export default function AlertFeed({ onWsStatusChange }) {
             <div style={{
               background: '#ffdad6',
               color: '#ba1a1a',
-              padding: '5px',
+              padding: '6px',
               borderRadius: '4px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              <Bell size={15} />
+              <Bell size={16} />
             </div>
             <div>
               <h3 style={{ fontSize: '13px', fontWeight: 700, color: '#002045', margin: 0 }}>
                 Live Alert Feed
               </h3>
-              <p style={{ fontSize: '10px', color: '#43474e', margin: 0, fontFamily: 'var(--font-mono)' }}>
-                {filteredAlerts.length} Watchlist Hits
-              </p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span style={{ fontSize: '10px', color: '#15803d', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                  ● LIVE SYNC
+                </span>
+                <span style={{ fontSize: '10px', color: '#74777f' }}>•</span>
+                <span style={{ fontSize: '10px', color: '#43474e', fontFamily: 'var(--font-mono)' }}>
+                  {filteredAlerts.length} Events
+                </span>
+              </div>
             </div>
           </div>
         )}
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          {!isCollapsed && alerts.length > 0 && (
-            <button 
-              onClick={handleClearAlerts}
-              title="Clear All Alerts"
-              style={{
-                background: '#ffdad6',
-                border: '1px solid #ffb4ab',
-                color: '#93000a',
-                padding: '3px 7px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '10px',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '3px'
-              }}
-            >
-              <Trash2 size={11} /> Clear
-            </button>
+          {!isCollapsed && (
+            <>
+              <button
+                onClick={() => setIsSoundEnabled(!isSoundEnabled)}
+                title={isSoundEnabled ? "Mute alert chime" : "Enable alert chime"}
+                style={{
+                  background: isSoundEnabled ? '#e6e8ea' : '#ffdad6',
+                  border: '1px solid #c4c6cf',
+                  color: isSoundEnabled ? '#191c1e' : '#ba1a1a',
+                  padding: '4px',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                {isSoundEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
+              </button>
+
+              {alerts.length > 0 && (
+                <button 
+                  onClick={handleClearAlerts}
+                  title="Clear All Alerts"
+                  style={{
+                    background: '#ffdad6',
+                    border: '1px solid #ffb4ab',
+                    color: '#93000a',
+                    padding: '3px 8px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '10px',
+                    fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '3px'
+                  }}
+                >
+                  <Trash2 size={11} /> Clear
+                </button>
+              )}
+            </>
           )}
 
           <button 
@@ -219,14 +272,14 @@ export default function AlertFeed({ onWsStatusChange }) {
             onClick={() => setFilterSeverity('ALL')}
             style={{
               flex: 1,
-              padding: '4px 8px',
+              padding: '5px 8px',
               borderRadius: '4px',
               border: filterSeverity === 'ALL' ? '1px solid #1a365d' : '1px solid #c4c6cf',
               background: filterSeverity === 'ALL' ? '#1a365d' : '#ffffff',
               color: filterSeverity === 'ALL' ? '#ffffff' : '#43474e',
               fontSize: '11px',
               fontFamily: 'var(--font-headline)',
-              fontWeight: 600,
+              fontWeight: 700,
               cursor: 'pointer'
             }}
           >
@@ -236,18 +289,18 @@ export default function AlertFeed({ onWsStatusChange }) {
             onClick={() => setFilterSeverity('HIGH_ONLY')}
             style={{
               flex: 1,
-              padding: '4px 8px',
+              padding: '5px 8px',
               borderRadius: '4px',
               border: filterSeverity === 'HIGH_ONLY' ? '1px solid #ba1a1a' : '1px solid #c4c6cf',
               background: filterSeverity === 'HIGH_ONLY' ? '#ffdad6' : '#ffffff',
               color: filterSeverity === 'HIGH_ONLY' ? '#93000a' : '#43474e',
               fontSize: '11px',
               fontFamily: 'var(--font-headline)',
-              fontWeight: 600,
+              fontWeight: 700,
               cursor: 'pointer'
             }}
           >
-            High / Critical Only
+            High / Critical
           </button>
         </div>
       )}
@@ -264,52 +317,122 @@ export default function AlertFeed({ onWsStatusChange }) {
           background: '#f7f9fb'
         }}>
           {filteredAlerts.length === 0 ? (
-            <div style={{ color: '#74777f', fontSize: '12px', textAlign: 'center', padding: '30px 10px' }}>
-              No active alerts matching filter.
+            <div style={{ color: '#74777f', fontSize: '12px', textAlign: 'center', padding: '40px 10px' }}>
+              <ShieldAlert size={28} style={{ color: '#c4c6cf', marginBottom: '8px' }} />
+              <div>No active alerts matching filter.</div>
+              <div style={{ fontSize: '10px', color: '#74777f', marginTop: '4px' }}>Detections from live video and camera feeds will appear here automatically.</div>
             </div>
           ) : (
-            filteredAlerts.map(a => (
-              <div 
-                key={a.alert_id || a.id || Math.random()}
-                style={{
-                  background: '#ffffff',
-                  border: `1px solid ${a.threat_level === 'CRITICAL' ? '#ba1a1a' : a.threat_level === 'WARNING' ? '#fe932c' : '#f97316'}`,
-                  borderRadius: '4px',
-                  padding: '10px 12px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '6px'
-                }}
-              >
-                {/* 1. Badge & Timestamp */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span className={
-                    a.threat_level === 'CRITICAL' ? 'badge-threat-critical' : a.threat_level === 'WARNING' ? 'badge-threat-medium' : 'badge-threat-high'
-                  } style={{ fontSize: '10px' }}>
-                    🚨 {a.threat_level || 'ALERT'}
-                  </span>
-                  <span style={{ fontSize: '10px', color: '#74777f', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
-                    {a.timestamp ? a.timestamp.split('T')[1]?.replace('Z','') : 'NOW'}
-                  </span>
-                </div>
+            filteredAlerts.map(a => {
+              const isCrit = a.threat_level === 'CRITICAL';
+              const isHigh = a.threat_level === 'HIGH';
+              const isSpeed = a.event === 'SPEED_VIOLATION_ALERT' || (a.reason && a.reason.includes('Overspeeding'));
 
-                {/* 2. Plate Number */}
-                <div>
-                  <span className="license-plate-badge" style={{ fontSize: '12px' }}>{a.license_plate}</span>
-                </div>
+              return (
+                <div 
+                  key={a.alert_id || a.id || Math.random()}
+                  style={{
+                    background: '#ffffff',
+                    border: `1px solid ${isCrit ? '#ba1a1a' : isHigh ? '#fe932c' : isSpeed ? '#0284c7' : '#c4c6cf'}`,
+                    borderLeft: `4px solid ${isCrit ? '#ba1a1a' : isHigh ? '#fe932c' : isSpeed ? '#0284c7' : '#1a365d'}`,
+                    borderRadius: '4px',
+                    padding: '10px 12px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '6px',
+                    boxShadow: '0 1px 4px rgba(0, 32, 69, 0.05)'
+                  }}
+                >
+                  {/* 1. Header Strip: Threat Pill + Timestamp */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '2px 7px',
+                      borderRadius: '3px',
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      fontFamily: 'var(--font-headline)',
+                      background: isCrit ? '#ffdad6' : isHigh ? '#ffedd5' : isSpeed ? '#e0f2fe' : '#e2e8f0',
+                      color: isCrit ? '#ba1a1a' : isHigh ? '#9a3412' : isSpeed ? '#0369a1' : '#334155'
+                    }}>
+                      {isCrit ? '🚨 CRITICAL THREAT' : isHigh ? '⚠️ HIGH WATCHLIST' : isSpeed ? '⚡ SPEED VIOLATION' : '📸 ANPR SCAN'}
+                    </span>
+                    <span style={{ fontSize: '10px', color: '#74777f', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
+                      {a.timestamp ? (a.timestamp.includes('T') ? a.timestamp.split('T')[1].replace('Z','') : a.timestamp) : 'JUST NOW'}
+                    </span>
+                  </div>
 
-                {/* 3. Reason / FIR Ref */}
-                <div style={{ fontSize: '12px', color: '#191c1e', fontWeight: 600 }}>
-                  {a.reason}
-                </div>
+                  {/* 2. License Plate Tag */}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      border: '1.5px solid #0f172a',
+                      borderRadius: '4px',
+                      overflow: 'hidden',
+                      background: '#ffffff'
+                    }}>
+                      <div style={{
+                        background: '#1e3a8a',
+                        color: '#ffffff',
+                        fontSize: '8px',
+                        fontWeight: 900,
+                        padding: '3px 4px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <span>IND</span>
+                      </div>
+                      <div style={{
+                        padding: '2px 8px',
+                        fontSize: '13px',
+                        fontWeight: 800,
+                        fontFamily: 'var(--font-mono)',
+                        color: '#0f172a',
+                        letterSpacing: '0.8px'
+                      }}>
+                        {a.license_plate}
+                      </div>
+                    </div>
 
-                {/* 4. Camera & City */}
-                <div style={{ fontSize: '11px', color: '#43474e', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #eceef0', paddingTop: '5px' }}>
-                  <span>Camera: <strong style={{ color: '#1a365d' }}>{a.camera_id}</strong></span>
-                  <span>City: <strong style={{ color: '#191c1e' }}>{a.city || 'Gujarat'}</strong></span>
+                    {a.speed_kmh && (
+                      <span style={{
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        color: '#ba1a1a',
+                        fontFamily: 'var(--font-mono)'
+                      }}>
+                        {a.speed_kmh} km/h
+                      </span>
+                    )}
+                  </div>
+
+                  {/* 3. Reason / Offense */}
+                  <div style={{ fontSize: '12px', color: '#191c1e', fontWeight: 600, lineHeight: 1.3 }}>
+                    {a.reason}
+                  </div>
+
+                  {/* 4. Location Telemetry */}
+                  <div style={{
+                    fontSize: '10px',
+                    color: '#43474e',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    borderTop: '1px solid #eceef0',
+                    paddingTop: '6px',
+                    fontFamily: 'var(--font-mono)'
+                  }}>
+                    <span>Camera: <strong style={{ color: '#1a365d' }}>{a.camera_id}</strong></span>
+                    <span>City: <strong style={{ color: '#191c1e' }}>{a.city || 'Ahmedabad'}</strong></span>
+                  </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       )}
