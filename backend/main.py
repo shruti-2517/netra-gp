@@ -87,6 +87,21 @@ def get_ingest_catalogue(db: Session = Depends(get_db)):
         })
     return catalogue
 
+from fastapi.responses import StreamingResponse
+from app.services.live_streamer import generate_live_stream_frames
+
+# Live Real-Time OpenCV & YOLO Stream Endpoint
+@app.get("/api/v1/streams/live/{camera_id}")
+def get_live_camera_stream(camera_id: str):
+    """
+    Streams live MJPEG video with real-time YOLO bounding boxes, vehicle telemetry,
+    and automatic alert triggering directly to web browsers.
+    """
+    return StreamingResponse(
+        generate_live_stream_frames(camera_id),
+        media_type="multipart/x-mixed-replace; boundary=frame"
+    )
+
 # Real-Time WebSocket Alerts Endpoint
 @app.websocket("/api/v1/ws/alerts")
 async def websocket_alerts(websocket: WebSocket):
