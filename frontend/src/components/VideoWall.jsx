@@ -65,7 +65,7 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, onPlateDetected }) 
     }
   }, [isWebcamMode, webcamStream]);
 
-  // Real-time frame capture & Backend OCR scanning
+  // Real-time frame capture & Backend OCR scanning for webcam
   useEffect(() => {
     if (!isWebcamMode) return;
 
@@ -101,7 +101,7 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, onPlateDetected }) 
     return () => clearInterval(scanTimer);
   }, [isWebcamMode]);
 
-  // Animated Live Canvas Feed
+  // Animated Live Canvas Feed + Real-Time Backend Ingestion Triggers
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -109,6 +109,7 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, onPlateDetected }) 
     let animationId;
     let progress = 0;
     let vehicleIdx = 0;
+    let lastDispatched = '';
 
     const render = () => {
       const width = canvas.width;
@@ -169,7 +170,7 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, onPlateDetected }) 
         }
         ctx.stroke();
 
-        progress += 0.008;
+        progress += 0.007;
         if (progress > 1) {
           progress = 0;
           vehicleIdx = (vehicleIdx + 1) % cam.vehicles.length;
@@ -180,6 +181,27 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, onPlateDetected }) 
         const carH = 85;
         const carX = width - progress * (width + carW + 50);
         const carY = height * 0.55 - 40;
+
+        // REAL-TIME AUTO DISPATCH TO BACKEND ON CHECKPOINT CROSSING
+        if (progress > 0.45 && progress < 0.55 && lastDispatched !== `${vehicleIdx}-${cam.id}`) {
+          lastDispatched = `${vehicleIdx}-${cam.id}`;
+          
+          fetch('http://localhost:8000/api/v1/detections', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              camera_id: cam.id,
+              timestamp: new Date().toISOString(),
+              license_plate: v.plate,
+              raw_ocr_text: v.plate,
+              vehicle_color: v.colorName,
+              vehicle_type: v.type,
+              detection_confidence: 0.95,
+              ocr_confidence: 0.98,
+              bbox: [Math.round(carX), Math.round(carY), Math.round(carX + carW), Math.round(carY + carH)]
+            })
+          }).catch(() => {});
+        }
 
         if (carX > -carW && carX < width + 50) {
           ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';

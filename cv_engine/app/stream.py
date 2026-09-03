@@ -94,6 +94,10 @@ class VideoStreamReader:
             if frame_count % self.frame_sample_rate == 0:
                 timestamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
                 yield frame_count, pts_ms, timestamp, frame
+                
+            # Real-time stream pacing for file playback
+            if not is_webcam and isinstance(self.source, str) and not self.source.startswith("rtsp://"):
+                time.sleep(0.02) # Paced 30-50 FPS playback
 
         self.release()
 
