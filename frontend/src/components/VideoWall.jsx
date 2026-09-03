@@ -7,28 +7,28 @@ const CAMERA_FEEDS = [
     name: "SG Highway - Iscon Crossroad",
     city: "Ahmedabad",
     dept: "Traffic Police",
-    url: "data/sample_feeds/traffic1.mp4"
+    url: "/sample_feeds/traffic1.mp4"
   },
   {
     id: "CAM-GND-002",
     name: "GH-5 Circle",
     city: "Gandhinagar",
     dept: "Municipal Corp",
-    url: "data/sample_feeds/120678-721759752_medium.mp4"
+    url: "/sample_feeds/120678-721759752_medium.mp4"
   },
   {
     id: "CAM-SRT-003",
     name: "Ring Road - Textile Market",
     city: "Surat",
     dept: "Smart City VMS",
-    url: "data/sample_feeds/153283-804933523_medium.mp4"
+    url: "/sample_feeds/153283-804933523_medium.mp4"
   },
   {
     id: "CAM-BRD-004",
     name: "Alkapuri Underpass",
     city: "Vadodara",
     dept: "Home Dept",
-    url: "data/sample_feeds/154195-807166827_medium.mp4"
+    url: "/sample_feeds/154195-807166827_medium.mp4"
   }
 ];
 

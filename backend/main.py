@@ -38,11 +38,19 @@ def startup_event():
     finally:
         db.close()
 
+from fastapi.staticfiles import StaticFiles
+import os
+
 # Include API Routers
 app.include_router(cameras.router, prefix=settings.API_V1_STR)
 app.include_router(watchlist.router, prefix=settings.API_V1_STR)
 app.include_router(detections.router, prefix=settings.API_V1_STR)
 app.include_router(reports.router, prefix=settings.API_V1_STR)
+
+# Mount Sample Video Feeds if directory exists
+feeds_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "sample_feeds")
+if os.path.exists(feeds_dir):
+    app.mount("/sample_feeds", StaticFiles(directory=feeds_dir), name="sample_feeds")
 
 # Official Spec Contract: Catalogue API Endpoint (/api/ingest)
 @app.get("/api/ingest")
