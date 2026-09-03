@@ -1,9 +1,14 @@
 import uuid
 import hashlib
 import datetime
+import base64
+import re
+import logging
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
+
 from app.database import get_db
 from app.models import DetectionEvent, Alert, Camera, WatchlistVehicle, EvidenceCertificate
 from app.schemas import DetectionEventCreate, DetectionEventResponse, AlertResponse, RouteTraceResponse, RouteWaypoint
@@ -12,7 +17,29 @@ from app.services.speed_calculator import SpeedCalculator
 from app.services.interception_predictor import InterceptionPredictor
 from app.services.websocket_manager import manager
 
+logger = logging.getLogger("DetectionsRouter")
+
 router = APIRouter(tags=["Detections & Alerts"])
+
+# Indian License Plate Regex Patterns
+INDIAN_PLATE_REGEX = re.compile(r'([A-Z]{2}\s*[0-9]{1,2}\s*[A-Z]{1,3}\s*[0-9]{3,4})')
+
+class FrameScanRequest(BaseModel):
+    image_base64: str
+    camera_id: Optional[str] = "CAM-WEBCAM-LIVE"
+
+_ocr_reader = None
+
+def get_easyocr_reader():
+    global _ocr_reader
+    if _ocr_reader is None:
+        try:
+            import easyocr
+            _ocr_reader = easyocr.Reader(['en'], gpu=False)
+            logger.info("EasyOCR loaded successfully in backend.")
+        except Exception as e:
+            logger.warning(f"EasyOCR reader init note: {e}")
+    return _ocr_reader
 
 @router.post("/detections", response_model=DetectionEventResponse, status_code=201)
 async def ingest_detection(detection_in: DetectionEventCreate, db: Session = Depends(get_db)):
@@ -23,12 +50,12 @@ async def ingest_detection(detection_in: DetectionEventCreate, db: Session = Dep
     """
     bbox_str = ",".join(map(str, detection_in.bbox)) if detection_in.bbox else ""
 
-    # 1. Run Watchlist Matching Engine (exact + canonical + fuzzy matching)
+    # 1. Run Watchlist Matching Engine
     matched_vehicle, match_conf = WatchlistMatcher.match_plate(db, detection_in.license_plate)
     is_hit = matched_vehicle is not None
     threat = matched_vehicle.threat_level if matched_vehicle else None
 
-    # 2. Inter-Camera Speed Calculation (v = delta_d / delta_t)
+    # 2. Inter-Camera Speed Calculation
     speed_kmh, is_speed_violation, speed_details = SpeedCalculator.calculate_inter_camera_speed(
         db=db,
         license_plate=detection_in.license_plate,
@@ -61,122 +88,180 @@ async def ingest_detection(detection_in: DetectionEventCreate, db: Session = Dep
     db.commit()
     db.refresh(event)
 
-    camera = db.query(Camera).filter(Camera.camera_id == detection_in.camera_id).first()
-    cam_name = camera.name if camera else detection_in.camera_id
-    city_name = camera.city if camera else "Gujarat State"
-
-    # 5. If Watchlist Hit, Generate Alert & Broadcast via WebSocket
-    if is_hit and matched_vehicle:
-        alert_id = f"ALT-{uuid.uuid4().hex[:8].upper()}"
-        alert_obj = Alert(
-            alert_id=alert_id,
-            camera_id=detection_in.camera_id,
-            camera_name=cam_name,
-            city=city_name,
-            license_plate=detection_in.license_plate,
-            vehicle_info=f"{detection_in.vehicle_color or matched_vehicle.color or ''} {detection_in.vehicle_type or matched_vehicle.vehicle_make or 'Vehicle'}".strip(),
-            reason=matched_vehicle.reason or "Watchlist Match",
-            threat_level=matched_vehicle.threat_level or "HIGH",
-            category=matched_vehicle.category or "STOLEN",
-            timestamp=detection_in.timestamp,
-            is_read=False
-        )
-        db.add(alert_obj)
-        db.commit()
-        db.refresh(alert_obj)
-
-        # WebSocket Payload
-        payload = {
-            "event": "WATCHLIST_ALERT",
-            "alert_id": alert_obj.alert_id,
-            "camera_id": alert_obj.camera_id,
-            "camera_name": alert_obj.camera_name,
-            "city": alert_obj.city,
-            "license_plate": alert_obj.license_plate,
-            "vehicle_info": alert_obj.vehicle_info,
-            "reason": alert_obj.reason,
-            "threat_level": alert_obj.threat_level,
-            "category": alert_obj.category,
-            "timestamp": alert_obj.timestamp,
-            "latitude": camera.latitude if camera else 23.0298,
-            "longitude": camera.longitude if camera else 72.5074,
-            "match_confidence": round(match_conf * 100, 1)
-        }
-        await manager.broadcast(payload)
-
-    # 6. If Speed Violation, Generate High-Speed Traffic Alert & BSA Evidence Certificate
-    if is_speed_violation:
-        speed_alert_id = f"SPD-{uuid.uuid4().hex[:8].upper()}"
-        speed_alert = Alert(
-            alert_id=speed_alert_id,
-            camera_id=detection_in.camera_id,
-            camera_name=cam_name,
-            city=city_name,
-            license_plate=detection_in.license_plate,
-            vehicle_info=f"{detection_in.vehicle_color or ''} {detection_in.vehicle_type or 'Vehicle'} ({speed_kmh} km/h)".strip(),
-            reason=f"Overspeeding Violation: Recorded {speed_kmh} km/h (Limit: 80 km/h)",
-            threat_level="WARNING",
-            category="TRAFFIC_VIOLATION",
-            timestamp=detection_in.timestamp,
-            is_read=False
-        )
-        db.add(speed_alert)
-
-        # Issue BSA 2023 Digital Evidence Certificate
+    # 5. Issue Section 63 BSA 2023 Certificate for violations/hits
+    if is_hit or is_speed_violation:
+        cert_id = f"CERT-BSA-2023-{uuid.uuid4().hex[:10].upper()}"
+        fine = 2000 if is_speed_violation else 5000
+        v_type = "INTER_CAMERA_SPEED_VIOLATION" if is_speed_violation else f"WATCHLIST_{threat}"
+        
         cert = EvidenceCertificate(
-            certificate_id=f"CERT-BSA-2023-{uuid.uuid4().hex[:10].upper()}",
+            certificate_id=cert_id,
             detection_id=event.id,
             license_plate=detection_in.license_plate,
             camera_id=detection_in.camera_id,
-            violation_type="INTER_CAMERA_SPEED_VIOLATION",
-            speed_recorded_kmh=speed_kmh,
-            speed_limit_kmh=80.0,
-            fine_amount_inr=2000 if speed_kmh > 100 else 1000,
+            violation_type=v_type,
+            speed_recorded_kmh=speed_kmh or 0.0,
+            speed_limit_kmh=speed_details.get("speed_limit_kmh", 80.0) if speed_details else 80.0,
+            fine_amount_inr=fine,
             sha256_hash=evidence_hash,
             digital_signature=f"DIGISIGN//GUJ_POLICE_ANPR//{evidence_hash[:32]}",
-            bsa_admissibility_code="BSA-2023-SEC63-CERTIFIED"
+            bsa_admissibility_code="BSA-2023-SEC63-CERTIFIED",
+            status="ISSUED"
         )
         db.add(cert)
         db.commit()
 
-        # Broadcast Speed Violation Alert
-        spd_payload = {
-            "event": "SPEED_VIOLATION_ALERT",
-            "alert_id": speed_alert.alert_id,
-            "camera_id": speed_alert.camera_id,
-            "camera_name": speed_alert.camera_name,
-            "city": speed_alert.city,
-            "license_plate": speed_alert.license_plate,
-            "vehicle_info": speed_alert.vehicle_info,
-            "reason": speed_alert.reason,
-            "threat_level": "WARNING",
-            "category": "TRAFFIC_VIOLATION",
-            "timestamp": speed_alert.timestamp,
-            "latitude": camera.latitude if camera else 23.0298,
-            "longitude": camera.longitude if camera else 72.5074,
-            "speed_kmh": speed_kmh
-        }
-        await manager.broadcast(spd_payload)
+    # 6. Dispatch WebSocket Alerts
+    if is_hit or is_speed_violation:
+        camera = db.query(Camera).filter(Camera.camera_id == detection_in.camera_id).first()
+        city_name = camera.city if camera else "Gujarat Highway"
+        
+        reason = matched_vehicle.reason if is_hit else f"Overspeeding Violation: Recorded {speed_kmh:.1f} km/h (Limit: 80 km/h)"
+        threat_level = threat if is_hit else "WARNING"
+
+        alert = Alert(
+            alert_id=f"ALT-{uuid.uuid4().hex[:8].upper()}",
+            detection_id=event.id,
+            license_plate=detection_in.license_plate,
+            threat_level=threat_level,
+            reason=reason,
+            camera_id=detection_in.camera_id,
+            city=city_name,
+            timestamp=detection_in.timestamp
+        )
+        db.add(alert)
+        db.commit()
+
+        # Broadcast payload
+        await manager.broadcast({
+            "event": "WATCHLIST_ALERT" if is_hit else "SPEED_VIOLATION_ALERT",
+            "alert_id": alert.alert_id,
+            "license_plate": alert.license_plate,
+            "threat_level": alert.threat_level,
+            "reason": alert.reason,
+            "camera_id": alert.camera_id,
+            "city": alert.city,
+            "timestamp": alert.timestamp
+        })
 
     return event
 
-@router.get("/detections", response_model=List[DetectionEventResponse])
-def get_recent_detections(
-    camera_id: Optional[str] = Query(None),
-    watchlist_only: bool = Query(False),
-    limit: int = Query(50, le=200),
-    db: Session = Depends(get_db)
-):
-    query = db.query(DetectionEvent)
-    if camera_id:
-        query = query.filter(DetectionEvent.camera_id == camera_id)
-    if watchlist_only:
-        query = query.filter(DetectionEvent.is_watchlist_hit == True)
-    return query.order_by(DetectionEvent.id.desc()).limit(limit).all()
+@router.post("/detections/scan-frame")
+async def scan_live_frame(req: FrameScanRequest, db: Session = Depends(get_db)):
+    """
+    Scans a frame captured from user's live webcam in the browser,
+    runs OCR, extracts Indian plate (e.g. DL 7CQ 1939, TN 87 C 5106, GJ 01 AB 1234),
+    correlates with Watchlist DB, persists Alert, and broadcasts live notification.
+    """
+    try:
+        b64_data = req.image_base64
+        if "base64," in b64_data:
+            b64_data = b64_data.split("base64,")[1]
+        img_bytes = base64.b64decode(b64_data)
+        
+        detected_text = ""
+        confidence = 0.88
+        
+        reader = get_easyocr_reader()
+        if reader:
+            try:
+                import numpy as np
+                import cv2
+                nparr = np.frombuffer(img_bytes, np.uint8)
+                img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                if img is not None:
+                    # Run EasyOCR on full image & contrast-enhanced image
+                    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+                    ocr_res = reader.readtext(gray, allowlist='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ')
+                    if not ocr_res:
+                        enhanced = cv2.equalizeHist(gray)
+                        ocr_res = reader.readtext(enhanced, allowlist='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ')
+                    
+                    if ocr_res:
+                        detected_text = " ".join([item[1] for item in ocr_res]).upper()
+                        confidence = float(ocr_res[0][2]) if len(ocr_res) > 0 else 0.88
+            except Exception as err:
+                logger.error(f"OCR decode error: {err}")
+
+        # Search for Indian plate syntax in detected text
+        cleaned_raw = detected_text.upper()
+        plate_match = INDIAN_PLATE_REGEX.search(cleaned_raw)
+        
+        if plate_match:
+            cleaned = re.sub(r'[^A-Z0-9]', '', plate_match.group(1))
+        else:
+            # Clean alphanumeric
+            cleaned = re.sub(r'[^A-Z0-9]', '', cleaned_raw)
+            # Find 2-letter state prefix + numbers
+            for state in ["DL", "TN", "GJ", "MH", "KA", "HR", "UP", "RJ", "MP", "KL", "WB", "AP", "TS", "PB", "CH"]:
+                if state in cleaned:
+                    idx = cleaned.find(state)
+                    candidate = cleaned[idx:idx+10]
+                    if len(candidate) >= 6:
+                        cleaned = candidate
+                        break
+
+        # If length is valid for a plate
+        if len(cleaned) >= 5:
+            now_iso = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
+            
+            matched_vehicle, _ = WatchlistMatcher.match_plate(db, cleaned)
+            is_hit = matched_vehicle is not None
+            threat = matched_vehicle.threat_level if is_hit else "HIGH"
+            reason = matched_vehicle.reason if is_hit else f"Live Surveillance ANPR Hit ({cleaned})"
+
+            alert_id = f"ALT-{int(datetime.datetime.utcnow().timestamp())}"
+            
+            # Persist Alert in database
+            db_alert = Alert(
+                alert_id=alert_id,
+                detection_id=None,
+                license_plate=cleaned,
+                threat_level=threat,
+                reason=reason,
+                camera_id=req.camera_id,
+                city="Ahmedabad / Live Webcam",
+                timestamp=now_iso,
+                is_acknowledged=False
+            )
+            db.add(db_alert)
+            db.commit()
+
+            # Broadcast live alert to all frontend clients
+            await manager.broadcast({
+                "event": "WATCHLIST_ALERT",
+                "alert_id": alert_id,
+                "license_plate": cleaned,
+                "threat_level": threat,
+                "reason": reason,
+                "camera_id": req.camera_id,
+                "city": "Ahmedabad / Live Webcam",
+                "timestamp": now_iso
+            })
+
+            return {
+                "detected": True,
+                "license_plate": cleaned,
+                "raw_text": detected_text or cleaned,
+                "confidence": round(confidence, 2),
+                "is_watchlist_hit": is_hit,
+                "threat_level": threat
+            }
+            
+        return {"detected": False, "raw_text": detected_text, "message": "Scanning for plate..."}
+    except Exception as e:
+        return {"detected": False, "error": str(e)}
 
 @router.get("/alerts", response_model=List[AlertResponse])
-def get_alerts(limit: int = Query(30, le=100), db: Session = Depends(get_db)):
-    return db.query(Alert).order_by(Alert.id.desc()).limit(limit).all()
+def get_alerts(
+    threat_level: Optional[str] = Query(None, description="Filter by threat level"),
+    limit: int = Query(50, description="Max alerts to return"),
+    db: Session = Depends(get_db)
+):
+    query = db.query(Alert)
+    if threat_level:
+        query = query.filter(Alert.threat_level == threat_level)
+    return query.order_by(Alert.id.desc()).limit(limit).all()
 
 @router.delete("/alerts", status_code=200)
 def clear_all_alerts(db: Session = Depends(get_db)):
@@ -186,10 +271,6 @@ def clear_all_alerts(db: Session = Depends(get_db)):
 
 @router.get("/tracking/{license_plate}", response_model=RouteTraceResponse)
 def trace_vehicle_route(license_plate: str, db: Session = Depends(get_db)):
-    """
-    Queries historical detection events for a target license plate, orders them chronologically,
-    and returns GIS route waypoints with recorded speeds for spatial timeline reconstruction.
-    """
     clean_target = license_plate.replace("-", "").replace(" ", "").upper()
     
     detections = db.query(DetectionEvent).filter(
@@ -225,121 +306,4 @@ def trace_vehicle_route(license_plate: str, db: Session = Depends(get_db)):
 
 @router.get("/tracking/{license_plate}/predict")
 def predict_vehicle_interception(license_plate: str, db: Session = Depends(get_db)):
-    """
-    Phase 2: Predictive Interception & Downstream Checkpoint Forecasting.
-    """
     return InterceptionPredictor.predict_next_checkpoints(db, license_plate)
-
-import base64
-import re
-from pydantic import BaseModel
-
-class FrameScanRequest(BaseModel):
-    image_base64: str
-    camera_id: Optional[str] = "CAM-WEBCAM-LIVE"
-
-_ocr_reader = None
-
-def get_easyocr_reader():
-    global _ocr_reader
-    if _ocr_reader is None:
-        try:
-            import easyocr
-            _ocr_reader = easyocr.Reader(['en'], gpu=False)
-        except Exception as e:
-            print(f"EasyOCR reader init note: {e}")
-    return _ocr_reader
-
-@router.post("/detections/scan-frame")
-async def scan_live_frame(req: FrameScanRequest, db: Session = Depends(get_db)):
-    """
-    Scans a frame captured from user's live webcam in the browser,
-    runs OCR, normalizes Indian plate (e.g. TN 87 C 5106, GJ 01 AB 1234),
-    correlates with Watchlist DB, and broadcasts live alert.
-    """
-    try:
-        # 1. Decode base64 image
-        b64_data = req.image_base64
-        if "base64," in b64_data:
-            b64_data = b64_data.split("base64,")[1]
-        img_bytes = base64.b64decode(b64_data)
-        
-        detected_text = ""
-        confidence = 0.85
-        
-        # 2. Try EasyOCR if available
-        reader = get_easyocr_reader()
-        if reader:
-            try:
-                import numpy as np
-                import cv2
-                nparr = np.frombuffer(img_bytes, np.uint8)
-                img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                if img is not None:
-                    # Run EasyOCR
-                    ocr_res = reader.readtext(img, allowlist='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 ')
-                    if ocr_res:
-                        detected_text = " ".join([item[1] for item in ocr_res])
-                        confidence = float(ocr_res[0][2]) if len(ocr_res) > 0 else 0.88
-            except Exception as err:
-                print(f"OCR decode error: {err}")
-
-        # Fallback / Normalize plate text
-        cleaned = re.sub(r'[^A-Z0-9]', '', detected_text.upper())
-        
-        # If no text detected by OCR, check for typical plate patterns in detected text
-        if len(cleaned) < 4:
-            # Check if there's any license plate in the image
-            cleaned = "TN87C5106" if "TN" in detected_text.upper() else cleaned
-
-        if len(cleaned) >= 4:
-            now_iso = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
-            
-            # Record detection and check watchlist
-            matched_vehicle, _ = WatchlistMatcher.match_plate(db, cleaned)
-            is_hit = matched_vehicle is not None
-            threat = matched_vehicle.threat_level if is_hit else "HIGH"
-            reason = matched_vehicle.reason if is_hit else "Live Camera ANPR Recognition (Webcam)"
-
-            alert_id = f"ALT-{int(datetime.datetime.utcnow().timestamp())}"
-            
-            # Persist Alert in database
-            db_alert = Alert(
-                alert_id=alert_id,
-                detection_id=None,
-                license_plate=cleaned,
-                threat_level=threat,
-                reason=reason,
-                camera_id=req.camera_id,
-                city="Ahmedabad / Live Webcam",
-                timestamp=now_iso,
-                is_acknowledged=False
-            )
-            db.add(db_alert)
-            db.commit()
-
-            alert_payload = {
-                "event": "WATCHLIST_ALERT" if is_hit else "CAMERA_RECOGNITION",
-                "alert_id": alert_id,
-                "license_plate": cleaned,
-                "threat_level": threat,
-                "reason": reason,
-                "camera_id": req.camera_id,
-                "city": "Ahmedabad / Live Webcam",
-                "timestamp": now_iso
-            }
-            await manager.broadcast(alert_payload)
-
-            return {
-                "detected": True,
-                "license_plate": cleaned,
-                "raw_text": detected_text or cleaned,
-                "confidence": round(confidence, 2),
-                "is_watchlist_hit": is_hit,
-                "threat_level": threat
-            }
-            
-        return {"detected": False, "message": "No plate detected in frame"}
-    except Exception as e:
-        return {"detected": False, "error": str(e)}
-
