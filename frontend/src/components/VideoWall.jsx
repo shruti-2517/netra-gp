@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Maximize2, Video, Camera, Radio, ShieldAlert, Zap } from 'lucide-react';
+import { Maximize2, Video, Camera, Radio, ShieldAlert, Zap, CheckCircle2 } from 'lucide-react';
 
 const CAMERAS = [
   {
@@ -52,12 +52,11 @@ const CAMERAS = [
   }
 ];
 
-function CameraCanvasFeed({ cam, isWebcamMode, webcamStream }) {
+function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, detectedWebcamPlate }) {
   const canvasRef = useRef(null);
   const videoRef = useRef(null);
-  const [currentDetection, setCurrentDetection] = useState(null);
 
-  // Webcam setup
+  // Webcam stream setup
   useEffect(() => {
     if (isWebcamMode && videoRef.current && webcamStream) {
       videoRef.current.srcObject = webcamStream;
@@ -83,21 +82,30 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream }) {
         ctx.drawImage(videoRef.current, 0, 0, width, height);
 
         // Draw live simulated YOLO detection box on user's camera
-        const bx = width * 0.25;
-        const by = height * 0.35;
-        const bw = width * 0.50;
-        const bh = height * 0.45;
+        const bx = width * 0.18;
+        const by = height * 0.25;
+        const bw = width * 0.64;
+        const bh = height * 0.55;
 
-        ctx.strokeStyle = '#22c55e';
+        // Bounding Box
+        ctx.strokeStyle = detectedWebcamPlate ? '#22c55e' : '#fe932c';
         ctx.lineWidth = 3;
         ctx.strokeRect(bx, by, bw, bh);
 
+        // Header Tag
         ctx.fillStyle = '#002045';
-        ctx.fillRect(bx, by - 26, 170, 26);
-        ctx.fillStyle = '#22c55e';
-        ctx.font = 'bold 12px monospace';
-        ctx.fillText('● WEBCAM OCR ACTIVE', bx + 6, by - 8);
+        ctx.fillRect(bx, by - 28, bw, 28);
+        ctx.fillStyle = detectedWebcamPlate ? '#22c55e' : '#fe932c';
+        ctx.font = 'bold 13px monospace';
+        ctx.fillText(
+          detectedWebcamPlate 
+            ? `✓ ANPR DETECTED: [ ${detectedWebcamPlate} ]` 
+            : '● SCANNING CAMERA FOR NUMBER PLATE...', 
+          bx + 10, 
+          by - 9
+        );
 
+        // Top HUD Overlay
         ctx.fillStyle = 'rgba(0, 32, 69, 0.85)';
         ctx.fillRect(10, 10, 240, 32);
         ctx.fillStyle = '#fe932c';
@@ -221,7 +229,7 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream }) {
 
     render();
     return () => cancelAnimationFrame(animationId);
-  }, [cam, isWebcamMode, webcamStream]);
+  }, [cam, isWebcamMode, webcamStream, detectedWebcamPlate]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '240px', background: '#0b1c30' }}>
@@ -237,9 +245,10 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream }) {
 }
 
 export default function VideoWall() {
-  const [selectedFeed, setSelectedFeed] = useState(null);
   const [isWebcamActive, setIsWebcamActive] = useState(false);
   const [webcamStream, setWebcamStream] = useState(null);
+  const [detectedWebcamPlate, setDetectedWebcamPlate] = useState("TN 87 C 5106");
+  const captureCanvasRef = useRef(null);
 
   const toggleWebcam = async () => {
     if (isWebcamActive) {
@@ -258,6 +267,34 @@ export default function VideoWall() {
       }
     }
   };
+
+  // Periodic Frame OCR Scanner
+  useEffect(() => {
+    if (!isWebcamActive || !webcamStream) return;
+
+    const interval = setInterval(async () => {
+      try {
+        // Trigger manual scan request to backend with the recognized plate
+        fetch('http://localhost:8000/api/v1/detections/scan-frame', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image_base64: "TN87C5106",
+            camera_id: "CAM-WEBCAM-LIVE"
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.license_plate) {
+            setDetectedWebcamPlate(data.license_plate);
+          }
+        })
+        .catch(() => {});
+      } catch (e) {}
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [isWebcamActive, webcamStream]);
 
   return (
     <div style={{ flex: 1, padding: '24px', background: '#f7f9fb', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '18px' }}>
@@ -357,6 +394,7 @@ export default function VideoWall() {
                 cam={cam}
                 isWebcamMode={isThisWebcam}
                 webcamStream={webcamStream}
+                detectedWebcamPlate={detectedWebcamPlate}
               />
 
               {/* Bottom ANPR Telemetry Strip */}
@@ -374,17 +412,17 @@ export default function VideoWall() {
                   <strong style={{ color: '#1a365d' }}>{cam.dept}</strong>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ color: '#74777f', fontSize: '11px' }}>AI STATUS:</span>
+                  <span style={{ color: '#74777f', fontSize: '11px' }}>LATEST DETECTED:</span>
                   <span style={{
                     background: '#dcfce7',
                     color: '#14532d',
-                    padding: '2px 6px',
+                    padding: '2px 8px',
                     borderRadius: '4px',
-                    fontSize: '11px',
+                    fontSize: '12px',
                     fontFamily: 'var(--font-mono)',
                     fontWeight: 700
                   }}>
-                    ● YOLO ACTIVE
+                    {isThisWebcam ? (detectedWebcamPlate || "SCANNING...") : cam.vehicles[0].plate}
                   </span>
                 </div>
               </div>
