@@ -19,6 +19,7 @@ class VideoStreamReader:
         self.source = source
         self.frame_sample_rate = frame_sample_rate
         self.cap = None
+        self.is_webcam = isinstance(source, int) or (isinstance(source, str) and source.isdigit())
 
     def connect(self, retry_backoff=2.0, max_backoff=30.0):
         """
@@ -28,18 +29,12 @@ class VideoStreamReader:
         - Local file: Default file reader
         """
         current_backoff = retry_backoff
-        is_webcam = False
-        src_target = self.source
-
-        # Determine if source is webcam index (e.g. 0 or "0")
-        if isinstance(self.source, int) or (isinstance(self.source, str) and self.source.isdigit()):
-            is_webcam = True
-            src_target = int(self.source)
+        src_target = int(self.source) if self.is_webcam else self.source
 
         while True:
-            logger.info(f"Connecting to feed source: {self.source} (Webcam Mode: {is_webcam})...")
+            logger.info(f"Connecting to feed source: {self.source} (Webcam Mode: {self.is_webcam})...")
             
-            if is_webcam:
+            if self.is_webcam:
                 # On Windows, DirectShow backend (CAP_DSHOW) or MSMF is required for webcam
                 if platform.system() == "Windows":
                     self.cap = cv2.VideoCapture(src_target, cv2.CAP_DSHOW)
@@ -96,7 +91,7 @@ class VideoStreamReader:
                 yield frame_count, pts_ms, timestamp, frame
                 
             # Real-time stream pacing for file playback
-            if not is_webcam and isinstance(self.source, str) and not self.source.startswith("rtsp://"):
+            if not self.is_webcam and isinstance(self.source, str) and not self.source.startswith("rtsp://"):
                 time.sleep(0.02) # Paced 30-50 FPS playback
 
         self.release()
