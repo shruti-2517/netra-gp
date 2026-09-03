@@ -67,7 +67,7 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPl
 
   // Real-time frame capture & Backend OCR scanning for webcam
   useEffect(() => {
-    if (!isWebcamMode) return;
+    if (!isWebcamMode || !webcamStream) return;
 
     const offscreen = document.createElement('canvas');
     offscreen.width = 640;
@@ -75,31 +75,34 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPl
     const octx = offscreen.getContext('2d');
 
     const scanTimer = setInterval(() => {
-      if (videoRef.current && videoRef.current.readyState >= 2) {
-        octx.drawImage(videoRef.current, 0, 0, 640, 480);
-        const b64 = offscreen.toDataURL('image/jpeg', 0.7);
+      const vid = videoRef.current;
+      if (vid && (vid.readyState >= 1 || vid.videoWidth > 0)) {
+        try {
+          octx.drawImage(vid, 0, 0, 640, 480);
+          const b64 = offscreen.toDataURL('image/jpeg', 0.8);
 
-        fetch('http://localhost:8000/api/v1/detections/scan-frame', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            image_base64: b64,
-            camera_id: 'CAM-WEBCAM-LIVE'
+          fetch('http://localhost:8000/api/v1/detections/scan-frame', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              image_base64: b64,
+              camera_id: 'CAM-WEBCAM-LIVE'
+            })
           })
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.detected && data.license_plate) {
-            setDetectedPlate(data.license_plate);
-            if (onPlateDetected) onPlateDetected(data.license_plate);
-          }
-        })
-        .catch(() => {});
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.detected && data.license_plate) {
+              setDetectedPlate(data.license_plate);
+              if (onPlateDetected) onPlateDetected(data.license_plate);
+            }
+          })
+          .catch(() => {});
+        } catch (e) {}
       }
-    }, 1200);
+    }, 1000);
 
     return () => clearInterval(scanTimer);
-  }, [isWebcamMode]);
+  }, [isWebcamMode, webcamStream]);
 
   // Handle Uploaded Image Mode
   useEffect(() => {
