@@ -1,13 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Bell, ChevronRight, ChevronLeft, Trash2, ShieldAlert, Filter, CheckCircle2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Bell, ChevronRight, ChevronLeft, Trash2, ShieldAlert, Filter, AlertTriangle, Zap } from 'lucide-react';
 
 export default function AlertFeed({ onWsStatusChange }) {
   const [alerts, setAlerts] = useState([]);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [filterSeverity, setFilterSeverity] = useState('ALL'); // 'ALL' or 'HIGH_ONLY'
+  const [newAlertToast, setNewAlertToast] = useState(null);
+  const wsRef = useRef(null);
+  const reconnectTimeoutRef = useRef(null);
 
-  useEffect(() => {
-    // 1. Load genuine alerts from Database API
+  // 1. Fetch latest alerts from REST API
+  const fetchAlerts = () => {
     fetch('http://localhost:8000/api/v1/alerts')
       .then(res => res.json())
       .then(data => {
@@ -17,29 +20,58 @@ export default function AlertFeed({ onWsStatusChange }) {
         }
       })
       .catch(() => {});
+  };
 
-    // 2. Connect to Live WebSocket Real-Time Alert Broadcaster
-    let ws;
-    try {
-      ws = new WebSocket('ws://localhost:8000/api/v1/ws/alerts');
-      ws.onopen = () => {
-        if (onWsStatusChange) onWsStatusChange(true);
-      };
-      ws.onclose = () => {
+  // 2. Setup WebSocket with Auto-Reconnect & Periodic Sync
+  useEffect(() => {
+    fetchAlerts();
+
+    // Periodic Background Sync (every 2 seconds fallback guarantee)
+    const pollInterval = setInterval(fetchAlerts, 2000);
+
+    const connectWS = () => {
+      try {
+        const ws = new WebSocket('ws://localhost:8000/api/v1/ws/alerts');
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+          if (onWsStatusChange) onWsStatusChange(true);
+        };
+
+        ws.onclose = () => {
+          if (onWsStatusChange) onWsStatusChange(false);
+          // Auto reconnect after 2.5s
+          reconnectTimeoutRef.current = setTimeout(connectWS, 2500);
+        };
+
+        ws.onerror = () => {
+          if (onWsStatusChange) onWsStatusChange(false);
+          ws.close();
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const payload = JSON.parse(event.data);
+            if (payload.license_plate) {
+              setAlerts(prev => [payload, ...prev]);
+              // Trigger Live Toast notification
+              setNewAlertToast(payload);
+              setTimeout(() => setNewAlertToast(null), 4000);
+            }
+          } catch (err) {}
+        };
+      } catch (err) {
         if (onWsStatusChange) onWsStatusChange(false);
-      };
-      ws.onmessage = (event) => {
-        const payload = JSON.parse(event.data);
-        if ((payload.event === 'WATCHLIST_ALERT' || payload.event === 'SPEED_VIOLATION_ALERT') && (!payload.camera_id || !payload.camera_id.startsWith('CAM-BATCH-'))) {
-          setAlerts(prev => [payload, ...prev]);
-        }
-      };
-    } catch (err) {
-      if (onWsStatusChange) onWsStatusChange(false);
-    }
+        reconnectTimeoutRef.current = setTimeout(connectWS, 2500);
+      }
+    };
+
+    connectWS();
 
     return () => {
-      if (ws) ws.close();
+      clearInterval(pollInterval);
+      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      if (wsRef.current) wsRef.current.close();
     };
   }, []);
 
@@ -48,7 +80,7 @@ export default function AlertFeed({ onWsStatusChange }) {
     fetch('http://localhost:8000/api/v1/alerts', { method: 'DELETE' }).catch(() => {});
   };
 
-  // Client-side filtering per section 5
+  // Client-side filtering
   const filteredAlerts = alerts.filter(a => {
     if (filterSeverity === 'HIGH_ONLY') {
       return a.threat_level === 'CRITICAL' || a.threat_level === 'HIGH';
@@ -68,6 +100,36 @@ export default function AlertFeed({ onWsStatusChange }) {
       position: 'relative',
       flexShrink: 0
     }}>
+      {/* Real-Time Toast Alert */}
+      {newAlertToast && !isCollapsed && (
+        <div style={{
+          position: 'absolute',
+          top: '50px',
+          left: '10px',
+          right: '10px',
+          background: '#ba1a1a',
+          color: '#ffffff',
+          padding: '10px',
+          borderRadius: '4px',
+          zIndex: 1000,
+          boxShadow: '0 4px 12px rgba(186, 26, 26, 0.35)',
+          animation: 'pulse 1s infinite alternate',
+          fontSize: '11px',
+          fontFamily: 'var(--font-headline)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontWeight: 700 }}>
+            <span>🚨 INCOMING LIVE TARGET ALERT!</span>
+            <span style={{ fontFamily: 'var(--font-mono)' }}>JUST NOW</span>
+          </div>
+          <div style={{ fontSize: '13px', fontWeight: 800, marginTop: '2px', fontFamily: 'var(--font-mono)' }}>
+            {newAlertToast.license_plate}
+          </div>
+          <div style={{ fontSize: '10px', opacity: 0.9 }}>
+            {newAlertToast.reason} ({newAlertToast.camera_id})
+          </div>
+        </div>
+      )}
+
       {/* Alert Header */}
       <div style={{
         padding: '10px 14px',
@@ -144,7 +206,7 @@ export default function AlertFeed({ onWsStatusChange }) {
         </div>
       </div>
 
-      {/* Filter Tabs (Section 5: High Alert / All toggle) */}
+      {/* Filter Tabs */}
       {!isCollapsed && (
         <div style={{
           display: 'flex',
@@ -208,7 +270,7 @@ export default function AlertFeed({ onWsStatusChange }) {
           ) : (
             filteredAlerts.map(a => (
               <div 
-                key={a.alert_id || a.id}
+                key={a.alert_id || a.id || Math.random()}
                 style={{
                   background: '#ffffff',
                   border: `1px solid ${a.threat_level === 'CRITICAL' ? '#ba1a1a' : a.threat_level === 'WARNING' ? '#fe932c' : '#f97316'}`,
@@ -224,7 +286,7 @@ export default function AlertFeed({ onWsStatusChange }) {
                   <span className={
                     a.threat_level === 'CRITICAL' ? 'badge-threat-critical' : a.threat_level === 'WARNING' ? 'badge-threat-medium' : 'badge-threat-high'
                   } style={{ fontSize: '10px' }}>
-                    🚨 {a.threat_level}
+                    🚨 {a.threat_level || 'ALERT'}
                   </span>
                   <span style={{ fontSize: '10px', color: '#74777f', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
                     {a.timestamp ? a.timestamp.split('T')[1]?.replace('Z','') : 'NOW'}
@@ -244,7 +306,7 @@ export default function AlertFeed({ onWsStatusChange }) {
                 {/* 4. Camera & City */}
                 <div style={{ fontSize: '11px', color: '#43474e', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #eceef0', paddingTop: '5px' }}>
                   <span>Camera: <strong style={{ color: '#1a365d' }}>{a.camera_id}</strong></span>
-                  <span>City: <strong style={{ color: '#191c1e' }}>{a.city}</strong></span>
+                  <span>City: <strong style={{ color: '#191c1e' }}>{a.city || 'Gujarat'}</strong></span>
                 </div>
               </div>
             ))
