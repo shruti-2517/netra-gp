@@ -4,8 +4,7 @@ import requests
 from app.stream import VideoStreamReader
 from app.detector import LicensePlateDetector
 from app.ocr import PlateOCREngine
-from app.config import CVConfig
-
+from app.config import CVConfig, normalize_plate_number
 from app.vmmc import VMMCClassifier
 
 logger = logging.getLogger("ANPRPipeline")
@@ -30,11 +29,14 @@ class ANPRPipeline:
             for det in detections:
                 ocr_result = self.ocr_engine.extract_text(det['crop'])
                 if ocr_result and ocr_result.get('normalized_plate') and len(ocr_result['normalized_plate']) >= 3:
-                    plate_read = ocr_result['normalized_plate']
+                    raw_plate = ocr_result['normalized_plate']
+                    plate_read = normalize_plate_number(raw_plate)
                     
                     # Phase 2: Classify Vehicle Color & Body Type
                     v_color = VMMCClassifier.classify_vehicle_color(det.get('crop'))
                     v_type = VMMCClassifier.classify_vehicle_type(det.get('bbox'), frame.shape)
+
+                    bbox_list = [int(x) for x in det['bbox']] if det.get('bbox') else [0, 0, 100, 100]
 
                     event = {
                         'camera_id': camera_id,
@@ -45,17 +47,28 @@ class ANPRPipeline:
                         'raw_ocr_text': ocr_result.get('raw_text', plate_read),
                         'vehicle_color': v_color,
                         'vehicle_type': v_type,
-                        'detection_confidence': round(det['confidence'], 2),
-                        'ocr_confidence': round(ocr_result.get('confidence', 0.0), 2),
-                        'bbox': det['bbox']
+                        'detection_confidence': round(float(det['confidence']), 2),
+                        'ocr_confidence': round(float(ocr_result.get('confidence', 0.9)), 2),
+                        'bbox': bbox_list
                     }
                     logger.info(f"[GENUINE PLATE READ] Camera: {camera_id} | Plate: {plate_read} | Color: {v_color} | Type: {v_type} | PTS: {pts_ms:.1f}ms | Conf: {event['ocr_confidence']:.2f}")
 
-                    # Dispatch event to Backend API if running
+                    # Dispatch event to Backend API
                     try:
-                        requests.post("http://localhost:8000/api/v1/detections", json=event, timeout=0.5)
-                    except Exception:
-                        pass
+                        api_payload = {
+                            'camera_id': camera_id,
+                            'timestamp': timestamp,
+                            'license_plate': plate_read,
+                            'raw_ocr_text': event['raw_ocr_text'],
+                            'detection_confidence': event['detection_confidence'],
+                            'ocr_confidence': event['ocr_confidence'],
+                            'bbox': bbox_list,
+                            'vehicle_color': v_color,
+                            'vehicle_type': v_type
+                        }
+                        requests.post("http://localhost:8000/api/v1/detections", json=api_payload, timeout=1.5)
+                    except Exception as err:
+                        logger.debug(f"Could not forward event to backend: {err}")
 
                     yield event
 
@@ -76,14 +89,16 @@ class ANPRPipeline:
         for det in detections:
             ocr_result = self.ocr_engine.extract_text(det['crop'])
             if ocr_result and ocr_result.get('normalized_plate') and len(ocr_result['normalized_plate']) >= 3:
+                raw_plate = ocr_result['normalized_plate']
+                plate_read = normalize_plate_number(raw_plate)
                 results.append({
                     'camera_id': camera_id,
                     'pts_ms': 0.0,
                     'timestamp': timestamp,
-                    'license_plate': ocr_result['normalized_plate'],
+                    'license_plate': plate_read,
                     'raw_ocr_text': ocr_result['raw_text'],
                     'detection_confidence': round(det['confidence'], 2),
                     'ocr_confidence': round(ocr_result['confidence'], 2),
-                    'bbox': det['bbox']
+                    'bbox': [int(x) for x in det['bbox']]
                 })
         return results

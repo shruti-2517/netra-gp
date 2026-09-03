@@ -7,10 +7,16 @@ INDIAN_PLATE_PATTERN = re.compile(r'^[A-Z]{2}\s*[-. ]?\s*\d{1,2}\s*[-. ]?\s*[A-Z
 def normalize_plate_number(raw_text: str) -> str:
     cleaned = re.sub(r'[^A-Z0-9]', '', raw_text.upper())
     
-    # Basic correction for common OCR confusions in license plates
-    if len(cleaned) >= 8:
-        state_part = cleaned[:2].replace('0', 'O').replace('1', 'I')
-        cleaned = state_part + cleaned[2:]
+    if len(cleaned) >= 6:
+        # First 2 chars: State letters (e.g. GJ, DL, TN, MH) -> Replace numbers with letters
+        state_part = cleaned[:2].replace('0', 'O').replace('1', 'I').replace('8', 'B')
+        
+        # Next 2 chars: RTO District code -> Replace letters with numbers (e.g. O1 -> 01, O5 -> 05)
+        dist_part = cleaned[2:4].replace('O', '0').replace('Q', '0').replace('D', '0').replace('I', '1').replace('L', '1').replace('Z', '2').replace('S', '5').replace('B', '8')
+        
+        rest = cleaned[4:]
+        cleaned = state_part + dist_part + rest
+        
     return cleaned
 
 class CVConfig:
