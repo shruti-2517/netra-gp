@@ -13,7 +13,7 @@ class LicensePlateDetector:
         
         # Auto-discover local YOLO weights if model_path is not explicitly passed
         if not model_path:
-            for candidate in ["cv_engine/yolov8n.pt", "yolov8n.pt"]:
+            for candidate in ["cv_engine/yolov8n.pt", "yolov8n.pt", "../cv_engine/yolov8n.pt"]:
                 if os.path.exists(candidate):
                     model_path = candidate
                     break
@@ -35,60 +35,71 @@ class LicensePlateDetector:
         detections = []
         h, w = frame.shape[:2]
 
+        # 1. YOLO-Based Object & Vehicle Extraction
         if self.use_yolo and self.model:
-            results = self.model(frame, conf=CVConfig.DETECTION_CONFIDENCE_THRESHOLD, verbose=False)
-            for r in results:
-                for box in r.boxes:
-                    x1, y1, x2, y2 = map(int, box.xyxy[0])
-                    conf = float(box.conf[0])
-                    cls_id = int(box.cls[0]) if hasattr(box, 'cls') else 0
-                    
-                    # Ignore top 10% and bottom 8% screen margins (watermark & timestamp zone)
-                    if y1 < 0.10 * h or y2 > 0.92 * h:
-                        continue
+            try:
+                results = self.model(frame, conf=0.25, verbose=False)
+                for r in results:
+                    for box in r.boxes:
+                        x1, y1, x2, y2 = map(int, box.xyxy[0])
+                        conf = float(box.conf[0])
+                        cls_id = int(box.cls[0]) if hasattr(box, 'cls') else 0
+                        
+                        # Vehicle classes (car, motorcycle, bus, truck)
+                        if cls_id in [2, 3, 5, 7]:
+                            vh = y2 - y1
+                            # Plate in lower 60% of vehicle
+                            p_y1 = max(0, y1 + int(vh * 0.40))
+                            plate_crop = frame[p_y1:y2, x1:x2]
+                            if plate_crop.size > 0:
+                                detections.append({
+                                    'bbox': (x1, p_y1, x2, y2),
+                                    'confidence': conf,
+                                    'crop': plate_crop
+                                })
+                        else:
+                            crop = frame[y1:y2, x1:x2]
+                            if crop.size > 0:
+                                detections.append({
+                                    'bbox': (x1, y1, x2, y2),
+                                    'confidence': conf,
+                                    'crop': crop
+                                })
+            except Exception as e:
+                logger.warning(f"YOLO inference error: {e}")
 
-                    # If YOLO detects a vehicle (class 2: car, 3: motorcycle, 5: bus, 7: truck), extract plate region from lower half of vehicle
-                    if cls_id in [2, 3, 5, 7]:
-                        vh = y2 - y1
-                        # Plate is typically located in lower 50% of the vehicle body
-                        plate_crop = frame[y1 + int(vh * 0.5):y2, x1:x2]
-                        if plate_crop.size > 0:
-                            detections.append({
-                                'bbox': (x1, y1 + int(vh * 0.5), x2, y2),
-                                'confidence': conf,
-                                'crop': plate_crop
-                            })
-                    else:
-                        crop = frame[y1:y2, x1:x2]
-                        if crop.size > 0:
-                            detections.append({
-                                'bbox': (x1, y1, x2, y2),
-                                'confidence': conf,
-                                'crop': crop
-                            })
-        else:
-            # Fallback contour locator with margin filtering
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            blur = cv2.GaussianBlur(gray, (5, 5), 0)
-            edged = cv2.Canny(blur, 50, 150)
+        # 2. Geometric Rectangular Plate Locator (Crucial for handheld plates & zoomed crops)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        blur = cv2.GaussianBlur(gray, (5, 5), 0)
+        edged = cv2.Canny(blur, 50, 200)
 
-            contours, _ = cv2.findContours(edged, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-
-            for cnt in contours:
-                x, y, cw, ch = cv2.boundingRect(cnt)
-                aspect_ratio = cw / float(ch) if ch > 0 else 0
-                area = cw * ch
-                
-                # Ignore outer 5% screen margin (watermarks)
-                if y < 0.05 * h or (y + ch) > 0.95 * h:
-                    continue
-
-                if 1.5 <= aspect_ratio <= 6.5 and 400 <= area <= 100000 and cw < w * 0.6:
-                    crop = frame[y:y+ch, x:x+cw]
+        contours, _ = cv2.findContours(edged, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        for cnt in contours:
+            x, y, cw, ch = cv2.boundingRect(cnt)
+            aspect_ratio = cw / float(ch) if ch > 0 else 0
+            area = cw * ch
+            
+            # Typical Indian HSRP plates have aspect ratio between 1.8 and 6.0
+            if 1.8 <= aspect_ratio <= 6.0 and 800 <= area <= (w * h * 0.5):
+                crop = frame[y:y+ch, x:x+cw]
+                if crop.size > 0:
                     detections.append({
                         'bbox': (x, y, x + cw, y + ch),
-                        'confidence': 0.75,
+                        'confidence': 0.85,
                         'crop': crop
                     })
+
+        # 3. Always include Center ROI (where users hold objects in webcams)
+        cx1 = int(w * 0.15)
+        cy1 = int(h * 0.20)
+        cx2 = int(w * 0.85)
+        cy2 = int(h * 0.80)
+        center_crop = frame[cy1:cy2, cx1:cx2]
+        if center_crop.size > 0:
+            detections.append({
+                'bbox': (cx1, cy1, cx2, cy2),
+                'confidence': 0.90,
+                'crop': center_crop
+            })
 
         return detections

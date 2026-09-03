@@ -2,17 +2,18 @@ import os
 import cv2
 import time
 import logging
+import platform
 
-# Official Requirement: Force RTSP over TCP to prevent packet corruption across firewalls & NATs
+# Force RTSP over TCP for network streams
 os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("VideoStreamReader")
 
 class VideoStreamReader:
-    def __init__(self, source, frame_sample_rate=5):
+    def __init__(self, source, frame_sample_rate=2):
         """
-        source: RTSP URL, WebRTC/WHEP, HLS URL, or local file path
+        source: RTSP URL, WebRTC/WHEP, HLS URL, local file path, or webcam index (0)
         frame_sample_rate: process 1 frame every N frames
         """
         self.source = source
@@ -21,16 +22,37 @@ class VideoStreamReader:
 
     def connect(self, retry_backoff=2.0, max_backoff=30.0):
         """
-        Connects to video feed with automatic exponential backoff retry logic.
+        Connects to video feed with automatic backend selection:
+        - Webcam index (0): DirectShow / default capture
+        - RTSP/Network: FFMPEG with TCP
+        - Local file: Default file reader
         """
         current_backoff = retry_backoff
+        is_webcam = False
+        src_target = self.source
+
+        # Determine if source is webcam index (e.g. 0 or "0")
+        if isinstance(self.source, int) or (isinstance(self.source, str) and self.source.isdigit()):
+            is_webcam = True
+            src_target = int(self.source)
+
         while True:
-            logger.info(f"Connecting to live feed source (RTSP over TCP forced): {self.source}")
+            logger.info(f"Connecting to feed source: {self.source} (Webcam Mode: {is_webcam})...")
             
-            # Using CAP_FFMPEG explicitly for low-latency RTSP decoding
-            self.cap = cv2.VideoCapture(self.source, cv2.CAP_FFMPEG)
+            if is_webcam:
+                # On Windows, DirectShow backend (CAP_DSHOW) or MSMF is required for webcam
+                if platform.system() == "Windows":
+                    self.cap = cv2.VideoCapture(src_target, cv2.CAP_DSHOW)
+                    if not self.cap.isOpened():
+                        self.cap = cv2.VideoCapture(src_target)
+                else:
+                    self.cap = cv2.VideoCapture(src_target)
+            elif isinstance(src_target, str) and src_target.startswith(("rtsp://", "http://", "https://")):
+                self.cap = cv2.VideoCapture(src_target, cv2.CAP_FFMPEG)
+            else:
+                self.cap = cv2.VideoCapture(src_target)
             
-            if self.cap.isOpened():
+            if self.cap and self.cap.isOpened():
                 logger.info(f"Successfully connected to feed: {self.source}")
                 return True
                 
@@ -55,24 +77,21 @@ class VideoStreamReader:
             ret, frame = self.cap.read()
             if not ret:
                 logger.info("End of feed or temporary stream interruption detected.")
-                # Attempt graceful reconnect with exponential backoff rather than aborting
                 self.release()
-                time.sleep(2.0)
-                if not self.connect(retry_backoff=2.0):
+                time.sleep(1.0)
+                if not self.connect(retry_backoff=1.0):
                     break
                 continue
 
-            # DO: Drive all timing from Presentation Timestamp (PTS), never arrival wall-clock time
             pts_ms = self.cap.get(cv2.CAP_PROP_POS_MSEC)
             
-            # Scene Discontinuity Detection (e.g. video loop point cut)
-            if pts_ms < last_pts:
-                logger.info(f"Scene Discontinuity / Loop Cut detected (PTS reset from {last_pts}ms to {pts_ms}ms). Resetting track state.")
+            # Scene Discontinuity Detection
+            if pts_ms < last_pts and pts_ms > 0:
+                logger.info(f"Scene Discontinuity / Loop Cut detected. Resetting track state.")
             last_pts = pts_ms
 
             frame_count += 1
             if frame_count % self.frame_sample_rate == 0:
-                # Convert PTS to ISO timestamp or relative time string
                 timestamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
                 yield frame_count, pts_ms, timestamp, frame
 
