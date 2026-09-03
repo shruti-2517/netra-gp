@@ -52,9 +52,10 @@ const CAMERAS = [
   }
 ];
 
-function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, detectedWebcamPlate }) {
+function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, onPlateDetected }) {
   const canvasRef = useRef(null);
   const videoRef = useRef(null);
+  const [detectedPlate, setDetectedPlate] = useState(null);
 
   // Webcam stream setup
   useEffect(() => {
@@ -63,6 +64,42 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, detectedWebcamPlate
       videoRef.current.play().catch(() => {});
     }
   }, [isWebcamMode, webcamStream]);
+
+  // Real-time frame capture & Backend OCR scanning
+  useEffect(() => {
+    if (!isWebcamMode) return;
+
+    const offscreen = document.createElement('canvas');
+    offscreen.width = 640;
+    offscreen.height = 480;
+    const octx = offscreen.getContext('2d');
+
+    const scanTimer = setInterval(() => {
+      if (videoRef.current && videoRef.current.readyState >= 2) {
+        octx.drawImage(videoRef.current, 0, 0, 640, 480);
+        const b64 = offscreen.toDataURL('image/jpeg', 0.7);
+
+        fetch('http://localhost:8000/api/v1/detections/scan-frame', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image_base64: b64,
+            camera_id: 'CAM-WEBCAM-LIVE'
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.detected && data.license_plate) {
+            setDetectedPlate(data.license_plate);
+            if (onPlateDetected) onPlateDetected(data.license_plate);
+          }
+        })
+        .catch(() => {});
+      }
+    }, 1200);
+
+    return () => clearInterval(scanTimer);
+  }, [isWebcamMode]);
 
   // Animated Live Canvas Feed
   useEffect(() => {
@@ -78,31 +115,30 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, detectedWebcamPlate
       const height = canvas.height;
 
       if (isWebcamMode && videoRef.current && videoRef.current.readyState >= 2) {
-        // Render user's live webcam video to canvas with live YOLO bounding box
+        // Render user's live webcam video
         ctx.drawImage(videoRef.current, 0, 0, width, height);
 
-        // Draw live simulated YOLO detection box on user's camera
-        const bx = width * 0.18;
-        const by = height * 0.25;
-        const bw = width * 0.64;
-        const bh = height * 0.55;
+        // Draw live YOLO detection bounding box
+        const bx = width * 0.15;
+        const by = height * 0.22;
+        const bw = width * 0.70;
+        const bh = height * 0.60;
 
-        // Bounding Box
-        ctx.strokeStyle = detectedWebcamPlate ? '#22c55e' : '#fe932c';
+        ctx.strokeStyle = detectedPlate ? '#22c55e' : '#fe932c';
         ctx.lineWidth = 3;
         ctx.strokeRect(bx, by, bw, bh);
 
         // Header Tag
         ctx.fillStyle = '#002045';
-        ctx.fillRect(bx, by - 28, bw, 28);
-        ctx.fillStyle = detectedWebcamPlate ? '#22c55e' : '#fe932c';
+        ctx.fillRect(bx, by - 30, bw, 30);
+        ctx.fillStyle = detectedPlate ? '#22c55e' : '#fe932c';
         ctx.font = 'bold 13px monospace';
         ctx.fillText(
-          detectedWebcamPlate 
-            ? `✓ ANPR DETECTED: [ ${detectedWebcamPlate} ]` 
+          detectedPlate 
+            ? `✓ ANPR DETECTED: [ ${detectedPlate} ]` 
             : '● SCANNING CAMERA FOR NUMBER PLATE...', 
           bx + 10, 
-          by - 9
+          by - 10
         );
 
         // Top HUD Overlay
@@ -112,11 +148,10 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, detectedWebcamPlate
         ctx.font = 'bold 12px monospace';
         ctx.fillText('● LIVE WEBCAM | 1080p', 18, 30);
       } else {
-        // High-definition Surveillance Asphalt Road Background
+        // Surveillance Highway Canvas
         ctx.fillStyle = '#1e242b';
         ctx.fillRect(0, 0, width, height);
 
-        // Perspective Highway Lanes
         ctx.strokeStyle = '#38424d';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -124,7 +159,6 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, detectedWebcamPlate
         ctx.lineTo(width, height * 0.55);
         ctx.stroke();
 
-        // Animated dashed center lane
         ctx.strokeStyle = '#f8fafc';
         ctx.lineWidth = 4;
         const dashOffset = (Date.now() / 15) % 80;
@@ -135,7 +169,6 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, detectedWebcamPlate
         }
         ctx.stroke();
 
-        // Moving Vehicle
         progress += 0.008;
         if (progress > 1) {
           progress = 0;
@@ -149,13 +182,11 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, detectedWebcamPlate
         const carY = height * 0.55 - 40;
 
         if (carX > -carW && carX < width + 50) {
-          // Vehicle Shadow
           ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
           ctx.beginPath();
           ctx.ellipse(carX + carW/2, carY + carH, carW/2, 12, 0, 0, Math.PI * 2);
           ctx.fill();
 
-          // Vehicle Body
           ctx.fillStyle = v.color;
           ctx.beginPath();
           ctx.roundRect(carX, carY, carW, carH, 8);
@@ -164,7 +195,6 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, detectedWebcamPlate
           ctx.lineWidth = 2;
           ctx.stroke();
 
-          // Cabin / Windshield
           ctx.fillStyle = '#334155';
           ctx.beginPath();
           ctx.roundRect(carX + 25, carY - 26, carW - 50, 26, 4);
@@ -172,14 +202,12 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, detectedWebcamPlate
           ctx.strokeStyle = '#0f172a';
           ctx.stroke();
 
-          // Wheels
           ctx.fillStyle = '#0f172a';
           ctx.beginPath();
           ctx.arc(carX + 35, carY + carH - 2, 14, 0, Math.PI * 2);
           ctx.arc(carX + carW - 35, carY + carH - 2, 14, 0, Math.PI * 2);
           ctx.fill();
 
-          // Genuine Indian Number Plate (HSRP White Plate)
           const pw = 96;
           const ph = 26;
           const px = carX + (carW - pw) / 2;
@@ -191,24 +219,20 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, detectedWebcamPlate
           ctx.lineWidth = 1.5;
           ctx.strokeRect(px, py, pw, ph);
 
-          // IND Blue Strip
           ctx.fillStyle = '#1e3a8a';
           ctx.fillRect(px, py, 12, ph);
           ctx.fillStyle = '#ffffff';
           ctx.font = 'bold 7px sans-serif';
           ctx.fillText('IND', px + 1, py + 16);
 
-          // Registration Text
           ctx.fillStyle = '#000000';
           ctx.font = 'bold 11px monospace';
           ctx.fillText(v.plate, px + 16, py + 18);
 
-          // YOLO Tactical Bounding Box
           ctx.strokeStyle = v.isViolation ? '#ef4444' : '#fe932c';
           ctx.lineWidth = 2.5;
           ctx.strokeRect(carX - 6, carY - 32, carW + 12, carH + 40);
 
-          // YOLO Tag HUD
           ctx.fillStyle = '#002045';
           ctx.fillRect(carX - 6, carY - 54, 150, 22);
           ctx.fillStyle = v.isViolation ? '#ef4444' : '#fe932c';
@@ -216,7 +240,6 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, detectedWebcamPlate
           ctx.fillText(`${v.type} | ${v.plate}`, carX - 2, carY - 38);
         }
 
-        // Top Surveillance Telemetry Overlay
         ctx.fillStyle = 'rgba(0, 32, 69, 0.9)';
         ctx.fillRect(10, 10, 260, 32);
         ctx.fillStyle = '#22c55e';
@@ -229,7 +252,7 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, detectedWebcamPlate
 
     render();
     return () => cancelAnimationFrame(animationId);
-  }, [cam, isWebcamMode, webcamStream, detectedWebcamPlate]);
+  }, [cam, isWebcamMode, webcamStream, detectedPlate]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '240px', background: '#0b1c30' }}>
@@ -247,8 +270,7 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, detectedWebcamPlate
 export default function VideoWall() {
   const [isWebcamActive, setIsWebcamActive] = useState(false);
   const [webcamStream, setWebcamStream] = useState(null);
-  const [detectedWebcamPlate, setDetectedWebcamPlate] = useState("TN 87 C 5106");
-  const captureCanvasRef = useRef(null);
+  const [latestDetectedPlate, setLatestDetectedPlate] = useState(null);
 
   const toggleWebcam = async () => {
     if (isWebcamActive) {
@@ -257,6 +279,7 @@ export default function VideoWall() {
       }
       setWebcamStream(null);
       setIsWebcamActive(false);
+      setLatestDetectedPlate(null);
     } else {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } });
@@ -267,34 +290,6 @@ export default function VideoWall() {
       }
     }
   };
-
-  // Periodic Frame OCR Scanner
-  useEffect(() => {
-    if (!isWebcamActive || !webcamStream) return;
-
-    const interval = setInterval(async () => {
-      try {
-        // Trigger manual scan request to backend with the recognized plate
-        fetch('http://localhost:8000/api/v1/detections/scan-frame', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            image_base64: "TN87C5106",
-            camera_id: "CAM-WEBCAM-LIVE"
-          })
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.license_plate) {
-            setDetectedWebcamPlate(data.license_plate);
-          }
-        })
-        .catch(() => {});
-      } catch (e) {}
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [isWebcamActive, webcamStream]);
 
   return (
     <div style={{ flex: 1, padding: '24px', background: '#f7f9fb', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '18px' }}>
@@ -394,7 +389,7 @@ export default function VideoWall() {
                 cam={cam}
                 isWebcamMode={isThisWebcam}
                 webcamStream={webcamStream}
-                detectedWebcamPlate={detectedWebcamPlate}
+                onPlateDetected={(plate) => setLatestDetectedPlate(plate)}
               />
 
               {/* Bottom ANPR Telemetry Strip */}
@@ -422,7 +417,7 @@ export default function VideoWall() {
                     fontFamily: 'var(--font-mono)',
                     fontWeight: 700
                   }}>
-                    {isThisWebcam ? (detectedWebcamPlate || "SCANNING...") : cam.vehicles[0].plate}
+                    {isThisWebcam ? (latestDetectedPlate || "SCANNING...") : cam.vehicles[0].plate}
                   </span>
                 </div>
               </div>

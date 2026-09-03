@@ -298,17 +298,34 @@ async def scan_live_frame(req: FrameScanRequest, db: Session = Depends(get_db)):
             # Record detection and check watchlist
             matched_vehicle, _ = WatchlistMatcher.match_plate(db, cleaned)
             is_hit = matched_vehicle is not None
-            threat = matched_vehicle.threat_level if is_hit else "WARNING"
-            reason = matched_vehicle.reason if is_hit else "Live Camera ANPR Recognition"
+            threat = matched_vehicle.threat_level if is_hit else "HIGH"
+            reason = matched_vehicle.reason if is_hit else "Live Camera ANPR Recognition (Webcam)"
+
+            alert_id = f"ALT-{int(datetime.datetime.utcnow().timestamp())}"
+            
+            # Persist Alert in database
+            db_alert = Alert(
+                alert_id=alert_id,
+                detection_id=None,
+                license_plate=cleaned,
+                threat_level=threat,
+                reason=reason,
+                camera_id=req.camera_id,
+                city="Ahmedabad / Live Webcam",
+                timestamp=now_iso,
+                is_acknowledged=False
+            )
+            db.add(db_alert)
+            db.commit()
 
             alert_payload = {
                 "event": "WATCHLIST_ALERT" if is_hit else "CAMERA_RECOGNITION",
-                "alert_id": f"ALT-{int(datetime.datetime.utcnow().timestamp())}",
+                "alert_id": alert_id,
                 "license_plate": cleaned,
                 "threat_level": threat,
                 "reason": reason,
                 "camera_id": req.camera_id,
-                "city": "Ahmedabad / Live Stream",
+                "city": "Ahmedabad / Live Webcam",
                 "timestamp": now_iso
             }
             await manager.broadcast(alert_payload)
