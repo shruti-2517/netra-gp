@@ -2,13 +2,12 @@
 NETRA-GP Live Stream & Real-Time Computer Vision Broadcaster
 Provides real-time Motion-JPEG (MJPEG) streams with live YOLOv8 detections,
 bounding boxes, license plate overlays, and instant WebSocket alert triggering.
+Safe with or without local cv2 installation.
 """
 import os
-import cv2
 import time
 import logging
 from typing import Generator
-import requests
 
 logger = logging.getLogger("LiveStreamer")
 
@@ -21,7 +20,6 @@ CAMERA_SOURCE_MAP = {
     "WEBCAM": 0
 }
 
-# In-memory detector cache
 _yolo_model = None
 
 def get_detector():
@@ -36,14 +34,25 @@ def get_detector():
             if _yolo_model is None:
                 _yolo_model = YOLO("yolov8n.pt")
         except Exception as e:
-            logger.warning(f"YOLO not initialized: {e}")
+            logger.warning(f"YOLO not initialized in backend: {e}")
     return _yolo_model
 
 def generate_live_stream_frames(camera_id: str = "CAM-AHM-001") -> Generator[bytes, None, None]:
     """
-    Streams live MJPEG frames with real-time YOLO bounding boxes, vehicle detection,
-    and automatic alert triggering.
+    Streams live MJPEG frames with real-time YOLO bounding boxes.
+    If cv2 is not installed in the current environment, yields a placeholder frame.
     """
+    try:
+        import cv2
+    except ImportError:
+        logger.warning("OpenCV (cv2) is not installed in the backend environment. Serving static stream fallback.")
+        # Generate 1x1 blank image fallback
+        blank_jpeg = b'\xff\xd8\xff\xe0\x00\x10JFIF\x00\x01\x01\x01\x00`\x00`\x00\x00\xff\xdb\x00C\x00\x08\x06\x06\x07\x06\x05\x08\x07\x07\x07\t\t\x08\n\x0c\x14\r\x0c\x0b\x0b\x0c\x19\x12\x13\x0f\x14\x1d\x1a\x1f\x1e\x1d\x1a\x1c\x1c $.\' ",#\x1c\x1c(7),01444\x1f\'9=82<.342\xff\xc0\x00\x0b\x08\x00\x01\x00\x01\x01\x01\x11\x00\xff\xc4\x00\x1f\x00\x00\x01\x05\x01\x01\x01\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x01\x02\x03\x04\x05\x06\x07\x08\t\n\x0b\xff\xda\x00\x08\x01\x01\x00\x00?\x00\xbf\x00\xff\xd9'
+        while True:
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + blank_jpeg + b'\r\n')
+            time.sleep(1)
+
     source = CAMERA_SOURCE_MAP.get(camera_id, "data/sample_feeds/traffic1.mp4")
     
     # Resolve relative paths
@@ -51,10 +60,13 @@ def generate_live_stream_frames(camera_id: str = "CAM-AHM-001") -> Generator[byt
         if not os.path.exists(source):
             alt1 = os.path.join("..", source)
             alt2 = os.path.join("data", "sample_feeds", "traffic1.mp4")
+            alt3 = os.path.join("..", "data", "sample_feeds", "traffic1.mp4")
             if os.path.exists(alt1):
                 source = alt1
             elif os.path.exists(alt2):
                 source = alt2
+            elif os.path.exists(alt3):
+                source = alt3
 
     cap = cv2.VideoCapture(source)
     if not cap.isOpened():
@@ -63,7 +75,6 @@ def generate_live_stream_frames(camera_id: str = "CAM-AHM-001") -> Generator[byt
 
     model = get_detector()
     frame_idx = 0
-    last_alert_time = 0
 
     while True:
         ret, frame = cap.read()
@@ -73,9 +84,8 @@ def generate_live_stream_frames(camera_id: str = "CAM-AHM-001") -> Generator[byt
             continue
 
         frame_idx += 1
-        h, w = frame.shape[:2]
 
-        # Run YOLO detection every frame or every 2 frames
+        # Run YOLO detection on stream
         if model and frame_idx % 2 == 0:
             try:
                 results = model(frame, conf=0.35, verbose=False)
@@ -85,12 +95,8 @@ def generate_live_stream_frames(camera_id: str = "CAM-AHM-001") -> Generator[byt
                         conf = float(box.conf[0])
                         cls_id = int(box.cls[0]) if hasattr(box, 'cls') else 0
                         
-                        # Vehicle classes: car, motorcycle, bus, truck
                         if cls_id in [2, 3, 5, 7] or True:
-                            # Draw real-time tactical bounding box
                             cv2.rectangle(frame, (x1, y1), (x2, y2), (254, 147, 44), 2)
-                            
-                            # HUD Label
                             label = f"VEHICLE {conf*100:.0f}%"
                             cv2.rectangle(frame, (x1, y1 - 22), (x1 + 130, y1), (0, 32, 69), -1)
                             cv2.putText(frame, label, (x1 + 4, y1 - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (254, 147, 44), 1)

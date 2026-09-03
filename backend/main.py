@@ -1,12 +1,18 @@
+import os
 import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+
 from app.config import settings
 from app.database import Base, engine, SessionLocal, get_db
 from app.models import Camera
 from app.seed import seed_initial_data
 from app.services.websocket_manager import manager
+from app.services.live_streamer import generate_live_stream_frames
 from app.api.v1.routers import cameras, watchlist, detections, reports
 
 logging.basicConfig(level=logging.INFO)
@@ -15,9 +21,21 @@ logger = logging.getLogger("NETRA-GP-Backend")
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Seed initial data
+    db = SessionLocal()
+    try:
+        seed_initial_data(db)
+    finally:
+        db.close()
+    yield
+    # Shutdown logic if needed
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json"
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    lifespan=lifespan
 )
 
 # CORS Middleware setup
@@ -28,18 +46,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Seed database on startup if empty
-@app.on_event("startup")
-def startup_event():
-    db = SessionLocal()
-    try:
-        seed_initial_data(db)
-    finally:
-        db.close()
-
-from fastapi.staticfiles import StaticFiles
-import os
 
 # Include API Routers
 app.include_router(cameras.router, prefix=settings.API_V1_STR)
@@ -63,7 +69,6 @@ def get_ingest_catalogue(db: Session = Depends(get_db)):
     catalogue = []
     for c in db_cams:
         cam_id = c.camera_id
-        # Derive stream endpoints per protocol standard
         rtsp_url = c.stream_url if c.stream_url.startswith("rtsp://") else f"rtsp://localhost:8554/stream/{cam_id}"
         whep_url = f"http://localhost:8889/stream/{cam_id}/whep"
         hls_url = f"http://localhost/live/stream/{cam_id}/index.m3u8"
@@ -76,7 +81,7 @@ def get_ingest_catalogue(db: Session = Depends(get_db)):
             "department": c.department,
             "latitude": c.latitude,
             "longitude": c.longitude,
-            "codec": "H.264", # Supports mixed H.264 / H.265
+            "codec": "H.264",
             "live_status": c.status.lower(),
             "stream_url": c.stream_url,
             "endpoints": {
@@ -86,9 +91,6 @@ def get_ingest_catalogue(db: Session = Depends(get_db)):
             }
         })
     return catalogue
-
-from fastapi.responses import StreamingResponse
-from app.services.live_streamer import generate_live_stream_frames
 
 # Live Real-Time OpenCV & YOLO Stream Endpoint
 @app.get("/api/v1/streams/live/{camera_id}")
