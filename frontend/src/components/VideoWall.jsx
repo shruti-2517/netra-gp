@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Maximize2, Video, Camera, Radio, ShieldAlert, Zap, CheckCircle2 } from 'lucide-react';
+import { Maximize2, Video, Camera, Upload, Radio, ShieldAlert, Zap, CheckCircle2 } from 'lucide-react';
 
 const CAMERAS = [
   {
@@ -52,7 +52,7 @@ const CAMERAS = [
   }
 ];
 
-function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, onPlateDetected }) {
+function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPlateDetected }) {
   const canvasRef = useRef(null);
   const videoRef = useRef(null);
   const [detectedPlate, setDetectedPlate] = useState(null);
@@ -101,7 +101,39 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, onPlateDetected }) 
     return () => clearInterval(scanTimer);
   }, [isWebcamMode]);
 
-  // Animated Live Canvas Feed + Real-Time Backend Ingestion Triggers
+  // Handle Uploaded Image Mode
+  useEffect(() => {
+    if (uploadedImage && isWebcamMode) {
+      const img = new Image();
+      img.src = uploadedImage;
+      img.onload = () => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        // Send uploaded image to backend OCR
+        fetch('http://localhost:8000/api/v1/detections/scan-frame', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image_base64: uploadedImage,
+            camera_id: 'CAM-UPLOAD-SCAN'
+          })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.license_plate) {
+            setDetectedPlate(data.license_plate);
+            if (onPlateDetected) onPlateDetected(data.license_plate);
+          }
+        })
+        .catch(() => {});
+      };
+    }
+  }, [uploadedImage, isWebcamMode]);
+
+  // Animated Live Canvas Feed
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -115,39 +147,38 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, onPlateDetected }) 
       const width = canvas.width;
       const height = canvas.height;
 
-      if (isWebcamMode && videoRef.current && videoRef.current.readyState >= 2) {
-        // Render user's live webcam video
-        ctx.drawImage(videoRef.current, 0, 0, width, height);
+      if (isWebcamMode) {
+        if (videoRef.current && videoRef.current.readyState >= 2 && !uploadedImage) {
+          ctx.drawImage(videoRef.current, 0, 0, width, height);
 
-        // Draw live YOLO detection bounding box
-        const bx = width * 0.15;
-        const by = height * 0.22;
-        const bw = width * 0.70;
-        const bh = height * 0.60;
+          // Draw live YOLO detection bounding box
+          const bx = width * 0.15;
+          const by = height * 0.22;
+          const bw = width * 0.70;
+          const bh = height * 0.60;
 
-        ctx.strokeStyle = detectedPlate ? '#22c55e' : '#fe932c';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(bx, by, bw, bh);
+          ctx.strokeStyle = detectedPlate ? '#22c55e' : '#fe932c';
+          ctx.lineWidth = 3;
+          ctx.strokeRect(bx, by, bw, bh);
 
-        // Header Tag
-        ctx.fillStyle = '#002045';
-        ctx.fillRect(bx, by - 30, bw, 30);
-        ctx.fillStyle = detectedPlate ? '#22c55e' : '#fe932c';
-        ctx.font = 'bold 13px monospace';
-        ctx.fillText(
-          detectedPlate 
-            ? `✓ ANPR DETECTED: [ ${detectedPlate} ]` 
-            : '● SCANNING CAMERA FOR NUMBER PLATE...', 
-          bx + 10, 
-          by - 10
-        );
+          ctx.fillStyle = '#002045';
+          ctx.fillRect(bx, by - 30, bw, 30);
+          ctx.fillStyle = detectedPlate ? '#22c55e' : '#fe932c';
+          ctx.font = 'bold 13px monospace';
+          ctx.fillText(
+            detectedPlate 
+              ? `✓ ANPR DETECTED: [ ${detectedPlate} ]` 
+              : '● SCANNING CAMERA FOR NUMBER PLATE...', 
+            bx + 10, 
+            by - 10
+          );
 
-        // Top HUD Overlay
-        ctx.fillStyle = 'rgba(0, 32, 69, 0.85)';
-        ctx.fillRect(10, 10, 240, 32);
-        ctx.fillStyle = '#fe932c';
-        ctx.font = 'bold 12px monospace';
-        ctx.fillText('● LIVE WEBCAM | 1080p', 18, 30);
+          ctx.fillStyle = 'rgba(0, 32, 69, 0.85)';
+          ctx.fillRect(10, 10, 240, 32);
+          ctx.fillStyle = '#fe932c';
+          ctx.font = 'bold 12px monospace';
+          ctx.fillText('● LIVE WEBCAM | 1080p', 18, 30);
+        }
       } else {
         // Surveillance Highway Canvas
         ctx.fillStyle = '#1e242b';
@@ -182,7 +213,7 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, onPlateDetected }) 
         const carX = width - progress * (width + carW + 50);
         const carY = height * 0.55 - 40;
 
-        // REAL-TIME AUTO DISPATCH TO BACKEND ON CHECKPOINT CROSSING
+        // Auto Dispatch to backend on crossing checkpoint
         if (progress > 0.45 && progress < 0.55 && lastDispatched !== `${vehicleIdx}-${cam.id}`) {
           lastDispatched = `${vehicleIdx}-${cam.id}`;
           
@@ -274,7 +305,7 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, onPlateDetected }) 
 
     render();
     return () => cancelAnimationFrame(animationId);
-  }, [cam, isWebcamMode, webcamStream, detectedPlate]);
+  }, [cam, isWebcamMode, webcamStream, detectedPlate, uploadedImage]);
 
   return (
     <div style={{ position: 'relative', width: '100%', height: '240px', background: '#0b1c30' }}>
@@ -292,10 +323,12 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, onPlateDetected }) 
 export default function VideoWall() {
   const [isWebcamActive, setIsWebcamActive] = useState(false);
   const [webcamStream, setWebcamStream] = useState(null);
+  const [uploadedImage, setUploadedImage] = useState(null);
   const [latestDetectedPlate, setLatestDetectedPlate] = useState(null);
+  const fileInputRef = useRef(null);
 
   const toggleWebcam = async () => {
-    if (isWebcamActive) {
+    if (isWebcamActive && !uploadedImage) {
       if (webcamStream) {
         webcamStream.getTracks().forEach(track => track.stop());
       }
@@ -303,14 +336,32 @@ export default function VideoWall() {
       setIsWebcamActive(false);
       setLatestDetectedPlate(null);
     } else {
+      setUploadedImage(null);
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280, height: 720 } });
         setWebcamStream(stream);
         setIsWebcamActive(true);
       } catch (err) {
-        alert("Could not access webcam: " + err.message + ". Please ensure camera permissions are allowed in your browser.");
+        alert("Webcam Notice: " + err.message + "\n\nTip: If you are running Python in a terminal, stop it first or use the 'Upload Vehicle Image' button next to this to test any image directly!");
       }
     }
+  };
+
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (webcamStream) {
+        webcamStream.getTracks().forEach(track => track.stop());
+        setWebcamStream(null);
+      }
+      setUploadedImage(event.target.result);
+      setIsWebcamActive(true);
+      setLatestDetectedPlate("SCANNING IMAGE...");
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -338,6 +389,23 @@ export default function VideoWall() {
 
         {/* Live Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            accept="image/*"
+            style={{ display: 'none' }}
+          />
+
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="btn-secondary"
+            style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', padding: '7px 12px' }}
+          >
+            <Upload size={14} />
+            Upload Vehicle Image / Test Plate
+          </button>
+
           <button
             onClick={toggleWebcam}
             style={{
@@ -346,8 +414,8 @@ export default function VideoWall() {
               gap: '6px',
               padding: '7px 14px',
               borderRadius: '4px',
-              border: isWebcamActive ? '1px solid #ba1a1a' : '1px solid #15803d',
-              background: isWebcamActive ? '#ba1a1a' : '#15803d',
+              border: (isWebcamActive && !uploadedImage) ? '1px solid #ba1a1a' : '1px solid #15803d',
+              background: (isWebcamActive && !uploadedImage) ? '#ba1a1a' : '#15803d',
               color: '#ffffff',
               fontSize: '12px',
               fontWeight: 700,
@@ -355,7 +423,7 @@ export default function VideoWall() {
             }}
           >
             <Camera size={15} />
-            {isWebcamActive ? "Stop Webcam" : "Test My Live Laptop Camera"}
+            {isWebcamActive && !uploadedImage ? "Stop Webcam" : "Test Live Laptop Camera"}
           </button>
         </div>
       </div>
@@ -394,10 +462,10 @@ export default function VideoWall() {
               }}>
                 <div>
                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: '#fe932c' }}>
-                    {isThisWebcam ? "CAM-WEBCAM-LIVE" : cam.id}
+                    {isThisWebcam ? (uploadedImage ? "CAM-IMAGE-SCAN" : "CAM-WEBCAM-LIVE") : cam.id}
                   </span>
                   <h4 style={{ fontSize: '13px', fontWeight: 600, color: '#ffffff', margin: '2px 0 0 0' }}>
-                    {isThisWebcam ? "Your Live Laptop Camera Feed" : cam.name}
+                    {isThisWebcam ? (uploadedImage ? "Scanned Vehicle Image" : "Your Live Laptop Camera Feed") : cam.name}
                   </h4>
                 </div>
 
@@ -411,6 +479,7 @@ export default function VideoWall() {
                 cam={cam}
                 isWebcamMode={isThisWebcam}
                 webcamStream={webcamStream}
+                uploadedImage={uploadedImage}
                 onPlateDetected={(plate) => setLatestDetectedPlate(plate)}
               />
 
