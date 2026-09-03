@@ -7,18 +7,17 @@ from app.config import settings
 logger = logging.getLogger("Database")
 
 DATABASE_URL = settings.DATABASE_URL
+logger.info(f"Connecting to PostgreSQL database at {DATABASE_URL}...")
+
 try:
-    if DATABASE_URL.startswith("sqlite"):
-        engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-    else:
-        engine = create_engine(DATABASE_URL, pool_pre_ping=True)
-        # Test connection
-        with engine.connect() as conn:
-            pass
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+    # Verify connection
+    with engine.connect() as conn:
+        logger.info("Successfully established connection to PostgreSQL database (gujarat_cctv_db).")
 except Exception as e:
-    logger.warning(f"PostgreSQL database connection failed ({e}). Falling back to local SQLite database.")
-    DATABASE_URL = "sqlite:///./netra_gp.db"
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+    logger.error(f"Failed to connect to PostgreSQL database: {e}")
+    logger.error("Please ensure PostgreSQL is running and run 'python setup_postgres.py' in backend directory.")
+    raise ConnectionError(f"PostgreSQL connection failed: {e}") from e
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()

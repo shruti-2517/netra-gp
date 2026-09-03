@@ -35,8 +35,13 @@ gp_hackathon/
 - Node.js 18+
 - PostgreSQL database
 
-### 1. Database Infrastructure
-Ensure PostgreSQL is running locally on port 5432 with database `gujarat_cctv_db` (or set `DATABASE_URL` environment variable).
+### 1. Database Infrastructure Setup
+Ensure PostgreSQL service is running locally on port 5432.
+Run the automated setup script to create the `gujarat_cctv_db` database and `cctv_admin` user:
+```bash
+cd backend
+python setup_postgres.py
+```
 
 ### 2. Backend Setup
 ```bash
