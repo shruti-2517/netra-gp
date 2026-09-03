@@ -6,11 +6,13 @@ from app.detector import LicensePlateDetector
 from app.ocr import PlateOCREngine
 from app.config import CVConfig
 
+from app.vmmc import VMMCClassifier
+
 logger = logging.getLogger("ANPRPipeline")
 
 class ANPRPipeline:
     def __init__(self, model_path=None):
-        logger.info("Initializing NETRA-GP ANPR Pipeline (100% Genuine OCR Engine)...")
+        logger.info("Initializing NETRA-GP ANPR Pipeline (100% Genuine OCR & VMMC Engine)...")
         self.detector = LicensePlateDetector(model_path=model_path)
         self.ocr_engine = PlateOCREngine()
 
@@ -29,6 +31,11 @@ class ANPRPipeline:
                 ocr_result = self.ocr_engine.extract_text(det['crop'])
                 if ocr_result and ocr_result.get('normalized_plate') and len(ocr_result['normalized_plate']) >= 3:
                     plate_read = ocr_result['normalized_plate']
+                    
+                    # Phase 2: Classify Vehicle Color & Body Type
+                    v_color = VMMCClassifier.classify_vehicle_color(det.get('crop'))
+                    v_type = VMMCClassifier.classify_vehicle_type(det.get('bbox'), frame.shape)
+
                     event = {
                         'camera_id': camera_id,
                         'frame_number': frame_num,
@@ -36,11 +43,13 @@ class ANPRPipeline:
                         'timestamp': timestamp,
                         'license_plate': plate_read,
                         'raw_ocr_text': ocr_result.get('raw_text', plate_read),
+                        'vehicle_color': v_color,
+                        'vehicle_type': v_type,
                         'detection_confidence': round(det['confidence'], 2),
                         'ocr_confidence': round(ocr_result.get('confidence', 0.0), 2),
                         'bbox': det['bbox']
                     }
-                    logger.info(f"[GENUINE PLATE READ] Camera: {camera_id} | Plate: {plate_read} | PTS: {pts_ms:.1f}ms | Conf: {event['ocr_confidence']:.2f}")
+                    logger.info(f"[GENUINE PLATE READ] Camera: {camera_id} | Plate: {plate_read} | Color: {v_color} | Type: {v_type} | PTS: {pts_ms:.1f}ms | Conf: {event['ocr_confidence']:.2f}")
 
                     # Dispatch event to Backend API if running
                     try:

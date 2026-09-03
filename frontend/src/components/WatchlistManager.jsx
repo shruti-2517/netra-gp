@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShieldAlert, Plus, Search, Filter, Trash2 } from 'lucide-react';
+import { ShieldAlert, Plus, Search, Filter, Trash2, AlertOctagon } from 'lucide-react';
 
 const DEFAULT_WATCHLIST = [
   {
@@ -64,7 +64,7 @@ export default function WatchlistManager() {
     e.preventDefault();
     const created = {
       ...newVehicle,
-      watchlist_id: newVehicle.watchlist_id || `WL-00${watchlist.length + 1}`
+      watchlist_id: newVehicle.watchlist_id || `WL-${Date.now().toString().slice(-4)}`
     };
     setWatchlist([created, ...watchlist]);
     setShowAddModal(false);
@@ -76,112 +76,139 @@ export default function WatchlistManager() {
     }).catch(() => {});
   };
 
-  const handleDelete = (watchlist_id) => {
-    setWatchlist(watchlist.filter(w => w.watchlist_id !== watchlist_id));
-    fetch(`http://localhost:8000/api/v1/watchlist/${watchlist_id}`, {
-      method: 'DELETE'
-    }).catch(() => {});
-  };
-
-  const filteredWatchlist = watchlist.filter(w => {
-    const matchesSearch = w.license_plate.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          w.reason.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          w.watchlist_id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCat = selectedCategory === 'ALL' || w.category === selectedCategory;
+  const filteredWatchlist = watchlist.filter(v => {
+    const matchesSearch = v.license_plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          (v.reason && v.reason.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                          (v.owner_name && v.owner_name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesCat = selectedCategory === 'ALL' || v.category === selectedCategory;
     return matchesSearch && matchesCat;
   });
 
   return (
-    <div style={{ flex: 1, padding: '20px', background: '#0f172a', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      {/* Header Controls */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+    <div style={{ flex: 1, padding: '24px', background: '#f7f9fb', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+      {/* Top Header Controls */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
         <div>
-          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#fff' }}>Watchlist & Hotlist Vehicle Database</h2>
-          <p style={{ fontSize: '12px', color: '#94a3b8' }}>Real-Time ANPR Matching Engine Target List (Stolen Vehicles, Crime Suspects, Violators)</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertOctagon size={20} color="#ba1a1a" />
+            <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#002045', margin: 0 }}>
+              State Police Watchlist Database & Hotlist Intercept Registry
+            </h2>
+          </div>
+          <p style={{ fontSize: '12px', color: '#43474e', margin: '4px 0 0 0' }}>
+            Real-Time Watchlist Correlation Engine: Exact, Canonical, and Levenshtein Fuzzy Matching
+          </p>
         </div>
 
-        <button onClick={() => setShowAddModal(true)} className="btn-primary">
-          <Plus size={15} /> Add Vehicle to Watchlist
+        <button 
+          onClick={() => setShowAddModal(true)}
+          className="btn-accent"
+        >
+          <Plus size={15} /> Add Watchlist Target
         </button>
       </div>
 
-      {/* Filter Bar */}
-      <div className="glass-panel" style={{ padding: '12px 16px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px', background: '#1e293b', padding: '6px 12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <Search size={16} color="#94a3b8" />
+      {/* Search & Filter Bar */}
+      <div style={{
+        background: '#ffffff',
+        padding: '14px 18px',
+        borderRadius: '8px',
+        border: '1px solid #c4c6cf',
+        display: 'flex',
+        gap: '14px',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        boxShadow: '0 1px 3px rgba(0, 32, 69, 0.05)'
+      }}>
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          background: '#f2f4f6',
+          padding: '8px 12px',
+          borderRadius: '6px',
+          border: '1px solid #c4c6cf'
+        }}>
+          <Search size={16} color="#74777f" />
           <input 
             type="text" 
-            placeholder="Search by License Plate, FIR / Reason, or Watchlist ID..."
+            placeholder="Search by License Plate (e.g. GJ01AB1234), Reason, or Owner..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            style={{ background: 'transparent', border: 'none', color: '#fff', outline: 'none', width: '100%', fontSize: '12px' }}
+            style={{ background: 'transparent', border: 'none', color: '#191c1e', outline: 'none', width: '100%', fontSize: '13px' }}
           />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Filter size={15} color="#94a3b8" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Filter size={15} color="#74777f" />
           <select 
             value={selectedCategory}
             onChange={e => setSelectedCategory(e.target.value)}
             className="input-field"
+            style={{ fontWeight: 600 }}
           >
-            <option value="ALL">All Categories</option>
-            <option value="STOLEN">Stolen Vehicle</option>
+            <option value="ALL">All Threat Categories</option>
+            <option value="STOLEN">Stolen Vehicles</option>
             <option value="CRIMINAL_WANTED">Criminal Wanted</option>
-            <option value="TRAFFIC_VIOLATION">Traffic Violation</option>
+            <option value="TRAFFIC_VIOLATION">Traffic Violations</option>
           </select>
         </div>
       </div>
 
       {/* Watchlist Table */}
-      <div className="glass-panel" style={{ overflow: 'hidden' }}>
+      <div style={{
+        background: '#ffffff',
+        borderRadius: '8px',
+        border: '1px solid #c4c6cf',
+        overflow: 'hidden',
+        boxShadow: '0 2px 6px rgba(0, 32, 69, 0.06)'
+      }}>
         <table className="data-table-container">
           <thead>
             <tr>
-              <th>Watchlist ID</th>
-              <th>Target License Plate</th>
-              <th>Threat Level</th>
-              <th>Category</th>
-              <th>Vehicle Make & Color</th>
-              <th>Reason / FIR Details</th>
-              <th>Owner / Suspect</th>
-              <th>Actions</th>
+              <th>WATCHLIST ID</th>
+              <th>TARGET REGISTRATION</th>
+              <th>VEHICLE SPECIFICATION</th>
+              <th>THREAT LEVEL</th>
+              <th>CATEGORY</th>
+              <th>FIR / REASON FOR ALERT</th>
+              <th>REGISTERED OWNER</th>
             </tr>
           </thead>
           <tbody>
-            {filteredWatchlist.map(item => (
-              <tr key={item.watchlist_id}>
+            {filteredWatchlist.map(v => (
+              <tr key={v.watchlist_id}>
+                <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#1a365d' }}>{v.watchlist_id}</td>
                 <td>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: '#94a3b8' }}>{item.watchlist_id}</span>
+                  <span className="license-plate-badge" style={{ fontSize: '13px' }}>{v.license_plate}</span>
                 </td>
-                <td>
-                  <span className="license-plate-badge">{item.license_plate}</span>
+                <td style={{ fontWeight: 600, color: '#002045' }}>
+                  {v.color} {v.vehicle_make}
                 </td>
                 <td>
                   <span className={
-                    item.threat_level === 'CRITICAL' ? 'badge-threat-critical' :
-                    item.threat_level === 'HIGH' ? 'badge-threat-high' : 'badge-threat-medium'
+                    v.threat_level === 'CRITICAL' ? 'badge-threat-critical' : v.threat_level === 'HIGH' ? 'badge-threat-high' : 'badge-threat-medium'
                   }>
-                    {item.threat_level}
+                    {v.threat_level}
                   </span>
                 </td>
                 <td>
-                  <span style={{ background: 'rgba(255,255,255,0.05)', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600, color: '#cbd5e1' }}>
-                    {item.category}
+                  <span style={{
+                    background: '#f2f4f6',
+                    color: '#1a365d',
+                    border: '1px solid #c4c6cf',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: 700
+                  }}>
+                    {v.category}
                   </span>
                 </td>
-                <td>{item.color} {item.vehicle_make}</td>
-                <td style={{ color: '#f43f5e', fontWeight: 600 }}>{item.reason}</td>
-                <td>{item.owner_name}</td>
-                <td>
-                  <button 
-                    onClick={() => handleDelete(item.watchlist_id)}
-                    style={{ background: 'rgba(244,63,94,0.12)', border: 'none', color: '#f43f5e', padding: '5px', borderRadius: '6px', cursor: 'pointer' }}
-                    title="Remove from Watchlist"
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </td>
+                <td style={{ color: '#ba1a1a', fontWeight: 600 }}>{v.reason}</td>
+                <td style={{ color: '#43474e' }}>{v.owner_name || 'N/A'}</td>
               </tr>
             ))}
           </tbody>
@@ -196,109 +223,122 @@ export default function WatchlistManager() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(15,23,42,0.85)',
-          backdropFilter: 'blur(8px)',
-          zIndex: 2000,
+          background: 'rgba(0, 32, 69, 0.6)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '20px'
+          zIndex: 2000,
+          backdropFilter: 'blur(4px)'
         }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '480px', padding: '20px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#fff', marginBottom: '14px' }}>Add Target Vehicle to Hotlist Watchlist</h3>
+          <div style={{
+            background: '#ffffff',
+            border: '2px solid #ba1a1a',
+            borderRadius: '8px',
+            padding: '24px',
+            width: '100%',
+            maxWidth: '520px',
+            boxShadow: '0 20px 25px -5px rgba(0, 32, 69, 0.25)'
+          }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#ba1a1a', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <ShieldAlert size={18} /> Register Target in State Watchlist DB
+            </h3>
+
             <form onSubmit={handleAddVehicle} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
-                <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Target License Plate Number</label>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#43474e', marginBottom: '4px' }}>LICENSE PLATE (IND SYNTAX)</label>
                 <input 
                   type="text" 
+                  placeholder="e.g. GJ01XY9999" 
+                  value={newVehicle.license_plate} 
+                  onChange={e => setNewVehicle({ ...newVehicle, license_plate: e.target.value.toUpperCase() })} 
+                  className="input-field"
+                  style={{ width: '100%', fontFamily: 'var(--font-mono)', fontWeight: 700 }}
                   required
-                  placeholder="e.g. GJ01AB1234" 
-                  value={newVehicle.license_plate}
-                  onChange={e => setNewVehicle({ ...newVehicle, license_plate: e.target.value.toUpperCase() })}
-                  className="input-field" 
-                  style={{ width: '100%', fontFamily: 'var(--font-mono)', fontSize: '14px' }}
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Category</label>
-                  <select 
-                    value={newVehicle.category}
-                    onChange={e => setNewVehicle({ ...newVehicle, category: e.target.value })}
-                    className="input-field" 
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#43474e', marginBottom: '4px' }}>VEHICLE MAKE / MODEL</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Toyota Fortuner" 
+                    value={newVehicle.vehicle_make} 
+                    onChange={e => setNewVehicle({ ...newVehicle, vehicle_make: e.target.value })} 
+                    className="input-field"
                     style={{ width: '100%' }}
-                  >
-                    <option value="STOLEN">STOLEN</option>
-                    <option value="CRIMINAL_WANTED">CRIMINAL_WANTED</option>
-                    <option value="TRAFFIC_VIOLATION">TRAFFIC_VIOLATION</option>
-                  </select>
+                  />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Threat Level</label>
-                  <select 
-                    value={newVehicle.threat_level}
-                    onChange={e => setNewVehicle({ ...newVehicle, threat_level: e.target.value })}
-                    className="input-field" 
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#43474e', marginBottom: '4px' }}>COLOR</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. White / Silver" 
+                    value={newVehicle.color} 
+                    onChange={e => setNewVehicle({ ...newVehicle, color: e.target.value })} 
+                    className="input-field"
                     style={{ width: '100%' }}
-                  >
-                    <option value="CRITICAL">CRITICAL</option>
-                    <option value="HIGH">HIGH</option>
-                    <option value="MEDIUM">MEDIUM</option>
-                  </select>
+                  />
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Vehicle Make & Model</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. Hyundai Creta" 
-                    value={newVehicle.vehicle_make}
-                    onChange={e => setNewVehicle({ ...newVehicle, vehicle_make: e.target.value })}
-                    className="input-field" 
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#43474e', marginBottom: '4px' }}>THREAT CLASSIFICATION</label>
+                  <select 
+                    value={newVehicle.threat_level} 
+                    onChange={e => setNewVehicle({ ...newVehicle, threat_level: e.target.value })} 
+                    className="input-field"
                     style={{ width: '100%' }}
-                  />
+                  >
+                    <option value="CRITICAL">CRITICAL (Red Alert)</option>
+                    <option value="HIGH">HIGH (Intercept)</option>
+                    <option value="MEDIUM">MEDIUM (Monitor)</option>
+                  </select>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Vehicle Color</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. White" 
-                    value={newVehicle.color}
-                    onChange={e => setNewVehicle({ ...newVehicle, color: e.target.value })}
-                    className="input-field" 
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#43474e', marginBottom: '4px' }}>CATEGORY</label>
+                  <select 
+                    value={newVehicle.category} 
+                    onChange={e => setNewVehicle({ ...newVehicle, category: e.target.value })} 
+                    className="input-field"
                     style={{ width: '100%' }}
-                  />
+                  >
+                    <option value="STOLEN">Stolen Vehicle</option>
+                    <option value="CRIMINAL_WANTED">Criminal Wanted</option>
+                    <option value="TRAFFIC_VIOLATION">Traffic Violation</option>
+                  </select>
                 </div>
               </div>
 
               <div>
-                <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Reason / FIR Case Details</label>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#43474e', marginBottom: '4px' }}>FIR / REASON FOR INTERCEPTION</label>
                 <input 
                   type="text" 
-                  required
-                  placeholder="e.g. Stolen Vehicle FIR #2026/089" 
-                  value={newVehicle.reason}
-                  onChange={e => setNewVehicle({ ...newVehicle, reason: e.target.value })}
-                  className="input-field" 
+                  placeholder="e.g. Navrangpura Police Station FIR #128/2026" 
+                  value={newVehicle.reason} 
+                  onChange={e => setNewVehicle({ ...newVehicle, reason: e.target.value })} 
+                  className="input-field"
                   style={{ width: '100%' }}
+                  required
                 />
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
                 <button 
                   type="button" 
                   onClick={() => setShowAddModal(false)}
-                  style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
+                  className="btn-secondary"
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary">
-                  Save to Hotlist
+                <button 
+                  type="submit" 
+                  className="btn-accent"
+                >
+                  Save Watchlist Target
                 </button>
               </div>
             </form>

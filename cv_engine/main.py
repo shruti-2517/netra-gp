@@ -38,6 +38,20 @@ def main():
             source_url = "data/sample_feeds/traffic1.mp4"
             logger.warning(f"Camera [{args.camera}] not found in live catalogue. Falling back to default source: {source_url}")
 
+    # Resolve relative file path if running from cv_engine subfolder or root
+    import os
+    if not source_url.startswith(("rtsp://", "http://", "https://", "rtsps://")) and not source_url.isdigit():
+        if not os.path.exists(source_url):
+            alt_path = os.path.join("..", source_url)
+            if os.path.exists(alt_path):
+                source_url = os.path.abspath(alt_path)
+            elif os.path.exists(os.path.join("data", "sample_feeds", "traffic1.mp4")):
+                source_url = os.path.abspath(os.path.join("data", "sample_feeds", "traffic1.mp4"))
+            elif os.path.exists(os.path.join("..", "data", "sample_feeds", "traffic1.mp4")):
+                source_url = os.path.abspath(os.path.join("..", "data", "sample_feeds", "traffic1.mp4"))
+    elif source_url.isdigit():
+        source_url = int(source_url)
+
     logger.info(f"Resolved Stream URL: {source_url} (Protocol: {args.protocol.upper()})")
 
     # 2. Pipeline Execution (100% Genuine OCR)

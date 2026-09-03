@@ -51,6 +51,8 @@ class DetectionEventCreate(BaseModel):
     detection_confidence: float = 0.0
     ocr_confidence: float = 0.0
     bbox: Optional[List[int]] = None
+    vehicle_color: Optional[str] = "UNKNOWN"
+    vehicle_type: Optional[str] = "VEHICLE"
 
 class DetectionEventResponse(BaseModel):
     id: int
@@ -60,6 +62,11 @@ class DetectionEventResponse(BaseModel):
     raw_ocr_text: Optional[str] = None
     detection_confidence: float
     ocr_confidence: float
+    vehicle_color: Optional[str] = "UNKNOWN"
+    vehicle_type: Optional[str] = "VEHICLE"
+    speed_kmh: Optional[float] = None
+    is_speed_violation: bool = False
+    evidence_hash: Optional[str] = None
     is_watchlist_hit: bool
     threat_level: Optional[str] = None
 
@@ -94,8 +101,28 @@ class RouteWaypoint(BaseModel):
     longitude: float
     timestamp: str
     confidence: float
+    speed_kmh: Optional[float] = None
 
 class RouteTraceResponse(BaseModel):
     license_plate: str
     total_detections: int
     waypoints: List[RouteWaypoint]
+
+# Evidence Certificate Schemas (BSA 2023)
+class EvidenceCertificateResponse(BaseModel):
+    id: int
+    certificate_id: str
+    detection_id: int
+    license_plate: str
+    camera_id: str
+    violation_type: str
+    speed_recorded_kmh: Optional[float] = None
+    speed_limit_kmh: float = 80.0
+    fine_amount_inr: int = 1000
+    sha256_hash: str
+    digital_signature: str
+    bsa_admissibility_code: str
+    status: str
+
+    class Config:
+        from_attributes = True

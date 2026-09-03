@@ -1,12 +1,15 @@
 import uuid
+import hashlib
 import datetime
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.models import DetectionEvent, Alert, Camera, WatchlistVehicle
+from app.models import DetectionEvent, Alert, Camera, WatchlistVehicle, EvidenceCertificate
 from app.schemas import DetectionEventCreate, DetectionEventResponse, AlertResponse, RouteTraceResponse, RouteWaypoint
 from app.services.matcher import WatchlistMatcher
+from app.services.speed_calculator import SpeedCalculator
+from app.services.interception_predictor import InterceptionPredictor
 from app.services.websocket_manager import manager
 
 router = APIRouter(tags=["Detections & Alerts"])
@@ -15,17 +18,29 @@ router = APIRouter(tags=["Detections & Alerts"])
 async def ingest_detection(detection_in: DetectionEventCreate, db: Session = Depends(get_db)):
     """
     Ingests an ANPR detection event from CV Engine, correlates plate against Watchlist DB,
-    stores detection audit log, and dispatches WebSocket alert if matched.
+    calculates inter-camera speed violation, computes BSA 2023 SHA-256 digital evidence seal,
+    stores detection audit log, and dispatches WebSocket alerts.
     """
     bbox_str = ",".join(map(str, detection_in.bbox)) if detection_in.bbox else ""
 
-    # Run Watchlist Matching Engine (exact + canonical + fuzzy matching)
+    # 1. Run Watchlist Matching Engine (exact + canonical + fuzzy matching)
     matched_vehicle, match_conf = WatchlistMatcher.match_plate(db, detection_in.license_plate)
-    
     is_hit = matched_vehicle is not None
     threat = matched_vehicle.threat_level if matched_vehicle else None
 
-    # Record Detection Event
+    # 2. Inter-Camera Speed Calculation (v = delta_d / delta_t)
+    speed_kmh, is_speed_violation, speed_details = SpeedCalculator.calculate_inter_camera_speed(
+        db=db,
+        license_plate=detection_in.license_plate,
+        current_camera_id=detection_in.camera_id,
+        current_timestamp_str=detection_in.timestamp
+    )
+
+    # 3. BSA 2023 Cryptographic Evidence Hash (SHA-256)
+    evidence_payload = f"{detection_in.license_plate}|{detection_in.camera_id}|{detection_in.timestamp}|{speed_kmh or 0.0}|{threat or 'NORMAL'}"
+    evidence_hash = hashlib.sha256(evidence_payload.encode("utf-8")).hexdigest()
+
+    # 4. Record Detection Event
     event = DetectionEvent(
         camera_id=detection_in.camera_id,
         timestamp=detection_in.timestamp,
@@ -34,6 +49,11 @@ async def ingest_detection(detection_in: DetectionEventCreate, db: Session = Dep
         detection_confidence=detection_in.detection_confidence,
         ocr_confidence=detection_in.ocr_confidence,
         bbox=bbox_str,
+        vehicle_color=detection_in.vehicle_color or "UNKNOWN",
+        vehicle_type=detection_in.vehicle_type or "VEHICLE",
+        speed_kmh=speed_kmh,
+        is_speed_violation=is_speed_violation,
+        evidence_hash=evidence_hash,
         is_watchlist_hit=is_hit,
         threat_level=threat
     )
@@ -41,12 +61,12 @@ async def ingest_detection(detection_in: DetectionEventCreate, db: Session = Dep
     db.commit()
     db.refresh(event)
 
-    # If Watchlist Hit, Generate Alert & Broadcast via WebSocket
-    if is_hit and matched_vehicle:
-        camera = db.query(Camera).filter(Camera.camera_id == detection_in.camera_id).first()
-        cam_name = camera.name if camera else detection_in.camera_id
-        city_name = camera.city if camera else "Gujarat State"
+    camera = db.query(Camera).filter(Camera.camera_id == detection_in.camera_id).first()
+    cam_name = camera.name if camera else detection_in.camera_id
+    city_name = camera.city if camera else "Gujarat State"
 
+    # 5. If Watchlist Hit, Generate Alert & Broadcast via WebSocket
+    if is_hit and matched_vehicle:
         alert_id = f"ALT-{uuid.uuid4().hex[:8].upper()}"
         alert_obj = Alert(
             alert_id=alert_id,
@@ -54,7 +74,7 @@ async def ingest_detection(detection_in: DetectionEventCreate, db: Session = Dep
             camera_name=cam_name,
             city=city_name,
             license_plate=detection_in.license_plate,
-            vehicle_info=f"{matched_vehicle.color or ''} {matched_vehicle.vehicle_make or 'Vehicle'}".strip(),
+            vehicle_info=f"{detection_in.vehicle_color or matched_vehicle.color or ''} {detection_in.vehicle_type or matched_vehicle.vehicle_make or 'Vehicle'}".strip(),
             reason=matched_vehicle.reason or "Watchlist Match",
             threat_level=matched_vehicle.threat_level or "HIGH",
             category=matched_vehicle.category or "STOLEN",
@@ -83,6 +103,60 @@ async def ingest_detection(detection_in: DetectionEventCreate, db: Session = Dep
             "match_confidence": round(match_conf * 100, 1)
         }
         await manager.broadcast(payload)
+
+    # 6. If Speed Violation, Generate High-Speed Traffic Alert & BSA Evidence Certificate
+    if is_speed_violation:
+        speed_alert_id = f"SPD-{uuid.uuid4().hex[:8].upper()}"
+        speed_alert = Alert(
+            alert_id=speed_alert_id,
+            camera_id=detection_in.camera_id,
+            camera_name=cam_name,
+            city=city_name,
+            license_plate=detection_in.license_plate,
+            vehicle_info=f"{detection_in.vehicle_color or ''} {detection_in.vehicle_type or 'Vehicle'} ({speed_kmh} km/h)".strip(),
+            reason=f"Overspeeding Violation: Recorded {speed_kmh} km/h (Limit: 80 km/h)",
+            threat_level="WARNING",
+            category="TRAFFIC_VIOLATION",
+            timestamp=detection_in.timestamp,
+            is_read=False
+        )
+        db.add(speed_alert)
+
+        # Issue BSA 2023 Digital Evidence Certificate
+        cert = EvidenceCertificate(
+            certificate_id=f"CERT-BSA-2023-{uuid.uuid4().hex[:10].upper()}",
+            detection_id=event.id,
+            license_plate=detection_in.license_plate,
+            camera_id=detection_in.camera_id,
+            violation_type="INTER_CAMERA_SPEED_VIOLATION",
+            speed_recorded_kmh=speed_kmh,
+            speed_limit_kmh=80.0,
+            fine_amount_inr=2000 if speed_kmh > 100 else 1000,
+            sha256_hash=evidence_hash,
+            digital_signature=f"DIGISIGN//GUJ_POLICE_ANPR//{evidence_hash[:32]}",
+            bsa_admissibility_code="BSA-2023-SEC63-CERTIFIED"
+        )
+        db.add(cert)
+        db.commit()
+
+        # Broadcast Speed Violation Alert
+        spd_payload = {
+            "event": "SPEED_VIOLATION_ALERT",
+            "alert_id": speed_alert.alert_id,
+            "camera_id": speed_alert.camera_id,
+            "camera_name": speed_alert.camera_name,
+            "city": speed_alert.city,
+            "license_plate": speed_alert.license_plate,
+            "vehicle_info": speed_alert.vehicle_info,
+            "reason": speed_alert.reason,
+            "threat_level": "WARNING",
+            "category": "TRAFFIC_VIOLATION",
+            "timestamp": speed_alert.timestamp,
+            "latitude": camera.latitude if camera else 23.0298,
+            "longitude": camera.longitude if camera else 72.5074,
+            "speed_kmh": speed_kmh
+        }
+        await manager.broadcast(spd_payload)
 
     return event
 
@@ -114,7 +188,7 @@ def clear_all_alerts(db: Session = Depends(get_db)):
 def trace_vehicle_route(license_plate: str, db: Session = Depends(get_db)):
     """
     Queries historical detection events for a target license plate, orders them chronologically,
-    and returns GIS route waypoints for spatial timeline reconstruction.
+    and returns GIS route waypoints with recorded speeds for spatial timeline reconstruction.
     """
     clean_target = license_plate.replace("-", "").replace(" ", "").upper()
     
@@ -138,7 +212,8 @@ def trace_vehicle_route(license_plate: str, db: Session = Depends(get_db)):
             latitude=camera.latitude if camera else 23.0,
             longitude=camera.longitude if camera else 72.5,
             timestamp=det.timestamp,
-            confidence=det.ocr_confidence
+            confidence=det.ocr_confidence,
+            speed_kmh=det.speed_kmh
         ))
         seq += 1
 
@@ -147,3 +222,10 @@ def trace_vehicle_route(license_plate: str, db: Session = Depends(get_db)):
         total_detections=len(waypoints),
         waypoints=waypoints
     )
+
+@router.get("/tracking/{license_plate}/predict")
+def predict_vehicle_interception(license_plate: str, db: Session = Depends(get_db)):
+    """
+    Phase 2: Predictive Interception & Downstream Checkpoint Forecasting.
+    """
+    return InterceptionPredictor.predict_next_checkpoints(db, license_plate)

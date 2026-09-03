@@ -41,8 +41,34 @@ class DetectionEvent(Base):
     detection_confidence = Column(Float, default=0.0)
     ocr_confidence = Column(Float, default=0.0)
     bbox = Column(String(100))  # stored as comma-separated string e.g. "100,200,300,400"
+    
+    # Phase 2: VMMC & Enforcement Fields
+    vehicle_color = Column(String(50), default="UNKNOWN")
+    vehicle_type = Column(String(50), default="VEHICLE")  # SEDAN, SUV, BUS, TRUCK, MOTORCYCLE
+    speed_kmh = Column(Float, nullable=True)
+    is_speed_violation = Column(Boolean, default=False)
+    evidence_hash = Column(String(64), nullable=True)  # SHA-256 tamper-evident digital seal
+
     is_watchlist_hit = Column(Boolean, default=False)
     threat_level = Column(String(50), nullable=True)
+
+class EvidenceCertificate(Base):
+    __tablename__ = "evidence_certificates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    certificate_id = Column(String(60), unique=True, index=True, nullable=False)
+    detection_id = Column(Integer, index=True, nullable=False)
+    license_plate = Column(String(50), index=True, nullable=False)
+    camera_id = Column(String(50), nullable=False)
+    violation_type = Column(String(100), nullable=False) # SPEED_VIOLATION, WATCHLIST_STOLEN, SUSPICIOUS_MOVEMENT
+    speed_recorded_kmh = Column(Float, nullable=True)
+    speed_limit_kmh = Column(Float, default=80.0)
+    fine_amount_inr = Column(Integer, default=1000)
+    sha256_hash = Column(String(64), nullable=False)
+    digital_signature = Column(Text, nullable=False)
+    bsa_admissibility_code = Column(String(50), default="BSA-2023-SEC63")
+    issued_at = Column(DateTime, default=datetime.datetime.utcnow)
+    status = Column(String(50), default="ISSUED")
 
 class Alert(Base):
     __tablename__ = "alerts"

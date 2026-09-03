@@ -20,8 +20,14 @@ def get_watchlist(
         query = query.filter(WatchlistVehicle.threat_level == threat_level)
     return query.all()
 
+from app.auth import require_role_permission
+
 @router.post("", response_model=WatchlistResponse, status_code=201)
-def add_to_watchlist(vehicle_in: WatchlistCreate, db: Session = Depends(get_db)):
+def add_to_watchlist(
+    vehicle_in: WatchlistCreate, 
+    db: Session = Depends(get_db),
+    role: str = Depends(require_role_permission("write_watchlist"))
+):
     existing = db.query(WatchlistVehicle).filter(WatchlistVehicle.watchlist_id == vehicle_in.watchlist_id).first()
     if existing:
         raise HTTPException(status_code=400, detail=f"Watchlist entry '{vehicle_in.watchlist_id}' already exists.")
@@ -33,7 +39,11 @@ def add_to_watchlist(vehicle_in: WatchlistCreate, db: Session = Depends(get_db))
     return vehicle
 
 @router.delete("/{watchlist_id}", status_code=200)
-def remove_from_watchlist(watchlist_id: str, db: Session = Depends(get_db)):
+def remove_from_watchlist(
+    watchlist_id: str, 
+    db: Session = Depends(get_db),
+    role: str = Depends(require_role_permission("write_watchlist"))
+):
     vehicle = db.query(WatchlistVehicle).filter(WatchlistVehicle.watchlist_id == watchlist_id).first()
     if not vehicle:
         raise HTTPException(status_code=404, detail=f"Watchlist entry '{watchlist_id}' not found.")

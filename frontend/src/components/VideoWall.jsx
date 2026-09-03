@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Maximize2, Cpu } from 'lucide-react';
+import { Maximize2, Cpu, Video, ShieldCheck, Activity } from 'lucide-react';
 
 const CAMERA_FEEDS = [
   {
@@ -36,100 +36,99 @@ export default function VideoWall() {
   const [selectedFeed, setSelectedFeed] = useState(null);
 
   return (
-    <div style={{ flex: 1, padding: '20px', background: '#0f172a', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div style={{ flex: 1, padding: '24px', background: '#f7f9fb', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '18px' }}>
       {/* Top Controls Bar */}
       <div style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        background: '#1e293b',
-        padding: '12px 18px',
+        background: '#ffffff',
+        padding: '14px 20px',
         borderRadius: '8px',
-        border: '1px solid rgba(255, 255, 255, 0.08)'
+        border: '1px solid #c4c6cf',
+        boxShadow: '0 2px 6px rgba(0, 32, 69, 0.06)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '6px', borderRadius: '6px' }}>
-            <Cpu size={18} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ background: 'rgba(26, 54, 93, 0.1)', color: '#1a365d', padding: '8px', borderRadius: '6px' }}>
+            <Video size={20} />
           </div>
           <div>
-            <h2 style={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>Unified Live Video Wall</h2>
-            <p style={{ fontSize: '11px', color: '#94a3b8' }}>Model 2: Parallel Stream Ingestion (RTSP over TCP / WebRTC / HLS)</p>
+            <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#002045', margin: 0 }}>Unified Multi-Stream Video Wall</h2>
+            <p style={{ fontSize: '12px', color: '#43474e', margin: 0 }}>Model 2: Parallel Stream Ingestion (RTSP over TCP / WebRTC WHEP / HLS)</p>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button 
-            onClick={() => setSelectedFeed(null)}
-            style={{
-              background: selectedFeed === null ? '#334155' : 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              color: '#fff',
-              padding: '5px 12px',
-              borderRadius: '6px',
-              fontSize: '12px',
-              fontWeight: 600,
-              cursor: 'pointer'
-            }}
-          >
-            2x2 Grid View
-          </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          <span style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            background: '#dcfce7',
+            color: '#14532d',
+            border: '1px solid #86efac',
+            padding: '4px 10px',
+            borderRadius: '4px',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '11px',
+            fontWeight: 700
+          }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#15803d' }}></span>
+            ANPR INGESTION ACTIVE
+          </span>
         </div>
       </div>
 
-      {/* Video Grid */}
+      {/* 2x2 Video Wall Matrix */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: selectedFeed ? '1fr' : '1fr 1fr',
-        gap: '16px',
+        gridTemplateColumns: 'repeat(2, 1fr)',
+        gap: '18px',
         flex: 1
       }}>
-        {CAMERA_FEEDS.filter(f => selectedFeed === null || f.id === selectedFeed).map(feed => (
+        {CAMERA_FEEDS.map((feed) => (
           <div 
             key={feed.id}
             style={{
-              position: 'relative',
-              background: '#1e293b',
+              background: '#ffffff',
               borderRadius: '8px',
+              border: '1px solid #c4c6cf',
               overflow: 'hidden',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
               display: 'flex',
               flexDirection: 'column',
-              minHeight: '280px'
+              boxShadow: '0 2px 8px rgba(0, 32, 69, 0.08)'
             }}
           >
-            {/* Top Video Header Overlay */}
+            {/* Feed Header */}
             <div style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              zIndex: 10,
-              background: 'linear-gradient(180deg, rgba(15,23,42,0.85) 0%, rgba(15,23,42,0) 100%)',
+              background: '#002045',
               padding: '10px 14px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between'
+              justifyContent: 'space-between',
+              borderBottom: '2px solid #fe932c'
             }}>
               <div>
-                <span style={{ fontSize: '10px', fontWeight: 700, color: '#38bdf8', background: 'rgba(56,189,248,0.15)', padding: '2px 6px', borderRadius: '4px' }}>{feed.id}</span>
-                <h4 style={{ fontSize: '12px', fontWeight: 600, color: '#fff', marginTop: '2px' }}>{feed.name} ({feed.city})</h4>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', fontWeight: 700, color: '#fe932c' }}>
+                  {feed.id}
+                </span>
+                <h4 style={{ fontSize: '13px', fontWeight: 600, color: '#ffffff', margin: '2px 0 0 0' }}>
+                  {feed.name}
+                </h4>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span className="status-pill status-active" style={{ fontSize: '10px', padding: '2px 6px' }}>
-                  <span className="status-dot"></span> LIVE
-                </span>
+                <span style={{ fontSize: '11px', color: '#adc7f7', fontFamily: 'var(--font-body)' }}>{feed.city}</span>
                 <button 
-                  onClick={() => setSelectedFeed(selectedFeed === feed.id ? null : feed.id)}
-                  style={{ background: 'rgba(255,255,255,0.08)', border: 'none', color: '#fff', padding: '4px', borderRadius: '4px', cursor: 'pointer' }}
+                  onClick={() => setSelectedFeed(feed)}
+                  style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', padding: '4px 6px', borderRadius: '4px', cursor: 'pointer' }}
                 >
                   <Maximize2 size={13} />
                 </button>
               </div>
             </div>
 
-            {/* Video Player */}
-            <div style={{ position: 'relative', flex: 1, background: '#111827', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            {/* Video Viewport */}
+            <div style={{ position: 'relative', background: '#0b1c30', height: '240px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <video 
                 src={feed.url} 
                 autoPlay 
@@ -138,6 +137,43 @@ export default function VideoWall() {
                 playsInline
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
               />
+
+              {/* Live Overlay HUD */}
+              <div style={{
+                position: 'absolute',
+                top: '10px',
+                left: '10px',
+                background: 'rgba(0, 32, 69, 0.85)',
+                color: '#fe932c',
+                padding: '3px 8px',
+                borderRadius: '4px',
+                fontSize: '11px',
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700,
+                border: '1px solid rgba(254, 147, 44, 0.4)'
+              }}>
+                ● REC | 1080p H.264
+              </div>
+            </div>
+
+            {/* Bottom ANPR Telemetry Strip */}
+            <div style={{
+              background: '#f2f4f6',
+              padding: '10px 14px',
+              borderTop: '1px solid #e0e3e5',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              fontSize: '12px'
+            }}>
+              <div>
+                <span style={{ color: '#74777f', fontSize: '11px', fontWeight: 600 }}>DEPARTMENT: </span>
+                <strong style={{ color: '#1a365d' }}>{feed.dept}</strong>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ color: '#74777f', fontSize: '11px' }}>LATEST OCR:</span>
+                <span className="license-plate-badge" style={{ fontSize: '12px' }}>GJ01AB1234</span>
+              </div>
             </div>
           </div>
         ))}

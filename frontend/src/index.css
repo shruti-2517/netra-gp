@@ -1,30 +1,78 @@
+/* ==========================================================================
+   ETRA-GP / NETRA-GP Enterprise Dossier System — Design Tokens & Core Theme
+   Institutional Law Enforcement & Mission-Critical Command Design System
+   ========================================================================== */
+
 :root {
-  --bg-dark: #0f172a;
-  --bg-header: #1e293b;
-  --bg-card: #1e293b;
-  --bg-card-hover: #334155;
-  --bg-glass: rgba(30, 41, 59, 0.85);
-  --border-color: rgba(255, 255, 255, 0.08);
-  --border-active: rgba(56, 189, 248, 0.35);
+  /* Surfaces & Canvas */
+  --surface: #f7f9fb;
+  --surface-dim: #d8dadc;
+  --surface-bright: #f7f9fb;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f2f4f6;
+  --surface-container: #eceef0;
+  --surface-container-high: #e6e8ea;
+  --surface-container-highest: #e0e3e5;
+  --surface-variant: #e0e3e5;
   
-  --primary: #38bdf8;
-  --primary-glow: rgba(56, 189, 248, 0.15);
-  --accent-blue: #60a5fa;
-  --danger: #f43f5e;
-  --warning: #fbbf24;
-  --success: #10b981;
+  /* Text & On-Surfaces */
+  --on-surface: #191c1e;
+  --on-surface-variant: #43474e;
+  --inverse-surface: #2d3133;
+  --inverse-on-surface: #eff1f3;
   
-  --text-main: #f1f5f9;
-  --text-muted: #94a3b8;
-  --text-dim: #64748b;
+  /* Borders & Outlines */
+  --outline: #74777f;
+  --outline-variant: #c4c6cf;
+  --surface-tint: #455f88;
   
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  /* Primary Institutional Palette (Deep Navy) */
+  --primary: #002045;
+  --on-primary: #ffffff;
+  --primary-container: #1a365d;
+  --on-primary-container: #86a0cd;
+  --inverse-primary: #adc7f7;
   
-  --shadow-subtle: 0 4px 12px rgba(0, 0, 0, 0.25);
-  --radius-lg: 10px;
-  --radius-md: 6px;
-  --radius-sm: 4px;
+  /* Secondary Accent (Golden Saffron) */
+  --secondary: #904d00;
+  --on-secondary: #ffffff;
+  --secondary-container: #fe932c;
+  --on-secondary-container: #663500;
+  --secondary-saffron: #d97706;
+  
+  /* Tertiary Slate Palette */
+  --tertiary: #112235;
+  --on-tertiary: #ffffff;
+  --tertiary-container: #27374b;
+  --on-tertiary-container: #90a0b9;
+  
+  /* Error / Alerts */
+  --error: #ba1a1a;
+  --on-error: #ffffff;
+  --error-container: #ffdad6;
+  --on-error-container: #93000a;
+  
+  /* Success / Status */
+  --success: #15803d;
+  --success-container: #dcfce7;
+  --on-success: #14532d;
+  
+  /* Typography System per design.md */
+  --font-headline: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-body: 'Source Sans 3', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+  
+  /* Radii */
+  --rounded-sm: 2px;
+  --rounded-md: 4px;
+  --rounded-lg: 8px;
+  --rounded-xl: 12px;
+  --rounded-full: 9999px;
+  
+  /* Elevation Shadows */
+  --shadow-ambient: 0 1px 3px rgba(26, 54, 93, 0.08), 0 1px 2px rgba(26, 54, 93, 0.04);
+  --shadow-card: 0 4px 6px -1px rgba(26, 54, 93, 0.07), 0 2px 4px -1px rgba(26, 54, 93, 0.04);
+  --shadow-modal: 0 20px 25px -5px rgba(26, 54, 93, 0.15), 0 10px 10px -5px rgba(26, 54, 93, 0.08);
 }
 
 * {
@@ -34,36 +82,46 @@
 }
 
 body {
-  background-color: var(--bg-dark);
-  color: var(--text-main);
-  font-family: var(--font-sans);
+  background-color: var(--surface);
+  color: var(--on-surface);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 20px;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
 
-/* Custom Scrollbars */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-headline);
+  font-weight: 600;
+  color: var(--primary);
+  letter-spacing: -0.01em;
+}
+
+/* Custom Institutional Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-dark);
+  background: var(--surface-container-low);
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 4px;
+  background: var(--outline-variant);
+  border-radius: var(--rounded-md);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--primary);
+  background: var(--primary-container);
 }
 
-/* Layout Utilities */
+/* Base Layout Structure */
 .app-container {
   display: flex;
   flex-direction: column;
   height: 100vh;
   width: 100vw;
   overflow: hidden;
+  background: var(--surface);
 }
 
 .main-content {
@@ -71,56 +129,102 @@ body {
   flex: 1;
   overflow: hidden;
   position: relative;
+  background: var(--surface);
 }
 
-/* Glassmorphism Panel */
-.glass-panel {
-  background: var(--bg-glass);
-  backdrop-filter: blur(12px);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-subtle);
-}
-
-/* Header Styling */
+/* Header Banner (Command Authority) */
 .header {
-  height: 60px;
-  background: var(--bg-header);
-  border-bottom: 1px solid var(--border-color);
+  height: 64px;
+  background: var(--primary);
+  border-bottom: 2px solid var(--secondary-container);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
+  padding: 0 24px;
   z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 32, 69, 0.2);
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
-.brand-badge {
-  background: #334155;
+.brand-icon {
+  background: var(--secondary-container);
   color: var(--primary);
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 8px;
-  border-radius: var(--radius-sm);
-  border: 1px solid rgba(56, 189, 248, 0.25);
-  letter-spacing: 0.5px;
+  padding: 8px;
+  border-radius: var(--rounded-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .brand-title {
-  font-size: 16px;
+  font-family: var(--font-headline);
+  font-size: 18px;
   font-weight: 700;
-  color: #fff;
+  color: var(--on-primary);
   letter-spacing: 0.5px;
+}
+
+.brand-badge {
+  background: rgba(254, 147, 44, 0.15);
+  color: var(--secondary-container);
+  border: 1px solid rgba(254, 147, 44, 0.4);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--rounded-sm);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .brand-subtitle {
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--on-primary-container);
+  margin-top: 1px;
+}
+
+/* Nav Tabs */
+.nav-tabs {
+  display: flex;
+  gap: 6px;
+  background: rgba(0, 18, 40, 0.4);
+  padding: 4px;
+  border-radius: var(--rounded-md);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tab-btn {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--on-primary-container);
+  padding: 7px 14px;
+  border-radius: var(--rounded-md);
+  font-family: var(--font-headline);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.18s ease;
+}
+
+.tab-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.tab-btn.active {
+  background: var(--primary-container);
+  color: #ffffff;
+  border-color: var(--secondary-container);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Status Indicators */
@@ -128,16 +232,17 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 10px;
-  border-radius: 20px;
+  padding: 4px 10px;
+  border-radius: var(--rounded-full);
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
 }
 
 .status-active {
-  background: rgba(16, 185, 129, 0.12);
-  color: var(--success);
-  border: 1px solid rgba(16, 185, 129, 0.25);
+  background: var(--success-container);
+  color: var(--on-success);
+  border: 1px solid rgba(21, 128, 61, 0.3);
 }
 
 .status-dot {
@@ -147,158 +252,199 @@ body {
   background: currentColor;
 }
 
-/* Nav Tabs */
-.nav-tabs {
-  display: flex;
-  gap: 4px;
-  background: rgba(15, 23, 42, 0.6);
-  padding: 4px;
-  border-radius: 8px;
-  border: 1px solid var(--border-color);
+/* Enterprise Dossier Cards & Containers */
+.dossier-card, .glass-panel {
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--rounded-lg);
+  box-shadow: var(--shadow-ambient);
 }
 
-.tab-btn {
-  background: transparent;
-  border: 1px solid transparent;
-  color: var(--text-muted);
-  padding: 6px 12px;
-  border-radius: var(--radius-md);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  transition: all 0.15s ease;
-}
-
-.tab-btn:hover {
-  color: var(--text-main);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.tab-btn.active {
-  background: #334155;
-  color: var(--primary);
-  border-color: rgba(56, 189, 248, 0.3);
-}
-
-/* Subdued License Plate Badge (No harsh bright yellow/black) */
+/* Monospaced Registration Plate Badge */
 .license-plate-badge {
-  background: #334155;
-  color: #f1f5f9;
+  background: var(--surface-container-highest);
+  color: var(--primary);
   font-family: var(--font-mono);
   font-weight: 700;
+  font-size: 13px;
   padding: 3px 8px;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  letter-spacing: 1px;
+  border-radius: var(--rounded-sm);
+  border: 1px solid var(--outline);
+  letter-spacing: 0.08em;
   display: inline-block;
 }
 
-/* Common UI Data Table */
+/* Enterprise Data Table */
 .data-table-container {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
+  background: var(--surface-container-lowest);
 }
 
 .data-table-container th {
-  background: rgba(30, 41, 59, 0.95);
-  color: var(--text-muted);
+  background: var(--surface-container-low);
+  color: var(--on-surface-variant);
+  font-family: var(--font-headline);
   font-weight: 600;
   font-size: 11px;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   padding: 12px 16px;
   text-align: left;
-  border-bottom: 1px solid var(--border-color);
+  border-bottom: 2px solid var(--outline-variant);
 }
 
 .data-table-container td {
   padding: 12px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-  color: var(--text-main);
+  border-bottom: 1px solid var(--surface-container-high);
+  color: var(--on-surface);
 }
 
 .data-table-container tr:hover td {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--surface-container-low);
 }
 
-/* Subtle Threat Badge Colors */
+/* High-Contrast Threat Badges */
 .badge-threat-critical {
-  background: rgba(244, 63, 94, 0.15);
-  color: #f43f5e;
-  border: 1px solid rgba(244, 63, 94, 0.3);
-  padding: 2px 8px;
-  border-radius: 4px;
+  background: var(--error-container);
+  color: var(--on-error-container);
+  border: 1px solid var(--error);
+  padding: 3px 8px;
+  border-radius: var(--rounded-sm);
+  font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .badge-threat-high {
-  background: rgba(251, 146, 60, 0.15);
-  color: #fb923c;
-  border: 1px solid rgba(251, 146, 60, 0.3);
-  padding: 2px 8px;
-  border-radius: 4px;
+  background: #ffedd5;
+  color: #9a3412;
+  border: 1px solid #f97316;
+  padding: 3px 8px;
+  border-radius: var(--rounded-sm);
+  font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .badge-threat-medium {
-  background: rgba(251, 191, 36, 0.15);
-  color: #fbbf24;
-  border: 1px solid rgba(251, 191, 36, 0.3);
-  padding: 2px 8px;
-  border-radius: 4px;
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #f59e0b;
+  padding: 3px 8px;
+  border-radius: var(--rounded-sm);
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
-/* Form Inputs & Controls */
-.input-field {
-  background: #1e293b;
-  border: 1px solid var(--border-color);
-  color: #fff;
-  padding: 8px 12px;
-  border-radius: var(--radius-md);
-  font-size: 13px;
-  outline: none;
-  transition: border-color 0.15s ease;
-}
-
-.input-field:focus {
-  border-color: var(--primary);
-}
-
+/* Buttons */
 .btn-primary {
-  background: #0284c7;
-  color: #fff;
+  background: var(--primary-container);
+  color: #ffffff;
+  font-family: var(--font-headline);
   font-weight: 600;
   padding: 8px 16px;
-  border-radius: var(--radius-md);
+  border-radius: var(--rounded-md);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  transition: all 0.15s ease;
+  box-shadow: var(--shadow-ambient);
+}
+
+.btn-primary:hover {
+  background: var(--primary);
+  border-color: var(--secondary-container);
+}
+
+.btn-accent {
+  background: var(--secondary-container);
+  color: #ffffff;
+  font-family: var(--font-headline);
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: var(--rounded-md);
   border: none;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  transition: background 0.15s ease;
+  box-shadow: 0 2px 6px rgba(254, 147, 44, 0.35);
+  transition: all 0.15s ease;
 }
 
-.btn-primary:hover {
-  background: #0369a1;
+.btn-accent:hover {
+  background: #e67e17;
 }
 
-/* Leaflet Custom Dark Popups */
+.btn-secondary {
+  background: var(--surface-container-lowest);
+  color: var(--on-surface);
+  border: 1px solid var(--outline-variant);
+  font-family: var(--font-headline);
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: var(--rounded-md);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  transition: all 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--surface-container-high);
+  border-color: var(--outline);
+}
+
+/* Form Inputs & Controls */
+.input-field {
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  color: var(--on-surface);
+  padding: 8px 12px;
+  border-radius: var(--rounded-md);
+  font-family: var(--font-body);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input-field:focus {
+  border-color: var(--primary-container);
+  box-shadow: 0 0 0 2px rgba(26, 54, 93, 0.15);
+}
+
+/* Leaflet Custom High-Contrast Map Elements */
 .leaflet-popup-content-wrapper {
-  background: #1e293b !important;
-  color: #f8fafc !important;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4) !important;
+  background: var(--surface-container-lowest) !important;
+  color: var(--on-surface) !important;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--rounded-lg) !important;
+  box-shadow: var(--shadow-card) !important;
+  font-family: var(--font-body);
 }
 
 .leaflet-popup-tip {
-  background: #1e293b !important;
+  background: var(--surface-container-lowest) !important;
+}
+
+.leaflet-container {
+  font-family: var(--font-body) !important;
 }

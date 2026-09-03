@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Download, Filter } from 'lucide-react';
+import { Search, Plus, Download, Filter, Database, Camera } from 'lucide-react';
 
 const DEFAULT_CAMERAS = [
   {
@@ -107,63 +107,78 @@ export default function CameraRegistry() {
   });
 
   return (
-    <div style={{ flex: 1, padding: '20px', background: '#0f172a', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+    <div style={{ flex: 1, padding: '24px', background: '#f7f9fb', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '18px' }}>
       {/* Top Header Controls */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
         <div>
-          <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#fff' }}>Statewide Camera Metadata Registry</h2>
-          <p style={{ fontSize: '12px', color: '#94a3b8' }}>Model 1: Centralized Inventory & Spatial Metadata for ~80,000 Heterogeneous CCTV Feeds</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Database size={20} color="#1a365d" />
+            <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#002045', margin: 0 }}>
+              Statewide Camera Metadata Registry
+            </h2>
+          </div>
+          <p style={{ fontSize: '12px', color: '#43474e', margin: '4px 0 0 0' }}>
+            Model 1: Centralized Inventory & Spatial Metadata for ~80,000 Heterogeneous CCTV Feeds across 26 Departments
+          </p>
         </div>
 
         <div style={{ display: 'flex', gap: '10px' }}>
           <a 
             href="http://localhost:8000/api/v1/reports/export-csv"
             download
-            style={{
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              color: '#f1f5f9',
-              padding: '8px 14px',
-              borderRadius: '6px',
-              textDecoration: 'none',
-              fontSize: '12px',
-              fontWeight: 600,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
+            className="btn-secondary"
           >
-            <Download size={15} /> Export CSV Report
+            <Download size={14} /> Export CSV Report
           </a>
 
           <button 
             onClick={() => setShowAddModal(true)}
             className="btn-primary"
           >
-            <Plus size={15} /> Register New Camera
+            <Plus size={15} /> Register Camera Node
           </button>
         </div>
       </div>
 
       {/* Search & Filters */}
-      <div className="glass-panel" style={{ padding: '12px 16px', display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px', background: '#1e293b', padding: '6px 12px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <Search size={16} color="#94a3b8" />
+      <div style={{
+        background: '#ffffff',
+        padding: '14px 18px',
+        borderRadius: '8px',
+        border: '1px solid #c4c6cf',
+        display: 'flex',
+        gap: '14px',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        boxShadow: '0 1px 3px rgba(0, 32, 69, 0.05)'
+      }}>
+        <div style={{
+          flex: 1,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          background: '#f2f4f6',
+          padding: '8px 12px',
+          borderRadius: '6px',
+          border: '1px solid #c4c6cf'
+        }}>
+          <Search size={16} color="#74777f" />
           <input 
             type="text" 
             placeholder="Search by Camera ID, Location Name, or City..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            style={{ background: 'transparent', border: 'none', color: '#fff', outline: 'none', width: '100%', fontSize: '12px' }}
+            style={{ background: 'transparent', border: 'none', color: '#191c1e', outline: 'none', width: '100%', fontSize: '13px' }}
           />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Filter size={15} color="#94a3b8" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Filter size={15} color="#74777f" />
           <select 
             value={selectedCity}
             onChange={e => setSelectedCity(e.target.value)}
             className="input-field"
+            style={{ fontWeight: 600 }}
           >
             <option value="ALL">All Gujarat Cities</option>
             <option value="Ahmedabad">Ahmedabad</option>
@@ -176,39 +191,63 @@ export default function CameraRegistry() {
       </div>
 
       {/* Table */}
-      <div className="glass-panel" style={{ overflow: 'hidden' }}>
+      <div style={{
+        background: '#ffffff',
+        borderRadius: '8px',
+        border: '1px solid #c4c6cf',
+        overflow: 'hidden',
+        boxShadow: '0 2px 6px rgba(0, 32, 69, 0.06)'
+      }}>
         <table className="data-table-container">
           <thead>
             <tr>
               <th>Camera ID</th>
-              <th>Location / Name</th>
-              <th>City</th>
+              <th>Location Name</th>
               <th>Department Owner</th>
-              <th>Geo Coordinates</th>
-              <th>Camera Type</th>
+              <th>City / Sector</th>
+              <th>Coordinates (Lat / Lng)</th>
+              <th>Protocol / Type</th>
               <th>Status</th>
             </tr>
           </thead>
           <tbody>
-            {filteredCameras.map(cam => (
-              <tr key={cam.camera_id}>
-                <td>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: '#38bdf8' }}>{cam.camera_id}</span>
+            {filteredCameras.map(c => (
+              <tr key={c.camera_id}>
+                <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#1a365d' }}>{c.camera_id}</td>
+                <td style={{ fontWeight: 600, color: '#002045' }}>{c.name}</td>
+                <td style={{ color: '#43474e' }}>{c.department}</td>
+                <td style={{ fontWeight: 600 }}>{c.city}</td>
+                <td style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#74777f' }}>
+                  {c.latitude.toFixed(4)}, {c.longitude.toFixed(4)}
                 </td>
-                <td style={{ fontWeight: 600 }}>{cam.name}</td>
-                <td>{cam.city}</td>
                 <td>
-                  <span style={{ background: 'rgba(255,255,255,0.05)', padding: '3px 8px', borderRadius: '4px', fontSize: '11px', color: '#cbd5e1' }}>
-                    {cam.department}
+                  <span style={{
+                    background: '#f2f4f6',
+                    color: '#1a365d',
+                    border: '1px solid #c4c6cf',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    fontFamily: 'var(--font-mono)',
+                    fontWeight: 600
+                  }}>
+                    {c.type}
                   </span>
                 </td>
-                <td style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#94a3b8' }}>
-                  {cam.latitude.toFixed(4)}, {cam.longitude.toFixed(4)}
-                </td>
-                <td>{cam.type}</td>
                 <td>
-                  <span className="status-pill status-active" style={{ fontSize: '11px' }}>
-                    <span className="status-dot"></span> {cam.status}
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    background: '#dcfce7',
+                    color: '#14532d',
+                    border: '1px solid #86efac',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    fontSize: '11px',
+                    fontWeight: 700
+                  }}>
+                    ● {c.status}
                   </span>
                 </td>
               </tr>
@@ -217,7 +256,7 @@ export default function CameraRegistry() {
         </table>
       </div>
 
-      {/* Add Camera Modal */}
+      {/* Modal for adding camera */}
       {showAddModal && (
         <div style={{
           position: 'fixed',
@@ -225,50 +264,60 @@ export default function CameraRegistry() {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(15,23,42,0.85)',
-          backdropFilter: 'blur(8px)',
-          zIndex: 2000,
+          background: 'rgba(0, 32, 69, 0.6)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '20px'
+          zIndex: 2000,
+          backdropFilter: 'blur(4px)'
         }}>
-          <div className="glass-panel" style={{ width: '100%', maxWidth: '480px', padding: '20px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#fff', marginBottom: '14px' }}>Register New CCTV Camera Feed</h3>
+          <div style={{
+            background: '#ffffff',
+            border: '2px solid #1a365d',
+            borderRadius: '8px',
+            padding: '24px',
+            width: '100%',
+            maxWidth: '500px',
+            boxShadow: '0 20px 25px -5px rgba(0, 32, 69, 0.25)'
+          }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#002045', marginBottom: '16px' }}>
+              Register New Camera Node
+            </h3>
+
             <form onSubmit={handleAddCamera} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div>
-                <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Camera ID</label>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#43474e', marginBottom: '4px' }}>CAMERA ID</label>
                 <input 
                   type="text" 
-                  required
                   placeholder="e.g. CAM-AHM-006" 
-                  value={newCam.camera_id}
-                  onChange={e => setNewCam({ ...newCam, camera_id: e.target.value })}
-                  className="input-field" 
-                  style={{ width: '100%' }}
+                  value={newCam.camera_id} 
+                  onChange={e => setNewCam({ ...newCam, camera_id: e.target.value })} 
+                  className="input-field"
+                  style={{ width: '100%', fontFamily: 'var(--font-mono)' }}
+                  required
                 />
               </div>
 
               <div>
-                <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Location Name</label>
+                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#43474e', marginBottom: '4px' }}>LOCATION / CROSSROAD NAME</label>
                 <input 
                   type="text" 
-                  required
-                  placeholder="e.g. Ashram Road Intersection" 
-                  value={newCam.name}
-                  onChange={e => setNewCam({ ...newCam, name: e.target.value })}
-                  className="input-field" 
+                  placeholder="e.g. C.G. Road - Panchvati Circle" 
+                  value={newCam.name} 
+                  onChange={e => setNewCam({ ...newCam, name: e.target.value })} 
+                  className="input-field"
                   style={{ width: '100%' }}
+                  required
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div>
-                  <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>City</label>
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#43474e', marginBottom: '4px' }}>CITY</label>
                   <select 
-                    value={newCam.city}
-                    onChange={e => setNewCam({ ...newCam, city: e.target.value })}
-                    className="input-field" 
+                    value={newCam.city} 
+                    onChange={e => setNewCam({ ...newCam, city: e.target.value })} 
+                    className="input-field"
                     style={{ width: '100%' }}
                   >
                     <option value="Ahmedabad">Ahmedabad</option>
@@ -280,45 +329,30 @@ export default function CameraRegistry() {
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Department</label>
-                  <select 
-                    value={newCam.department}
-                    onChange={e => setNewCam({ ...newCam, department: e.target.value })}
-                    className="input-field" 
+                  <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: '#43474e', marginBottom: '4px' }}>DEPARTMENT</label>
+                  <input 
+                    type="text" 
+                    value={newCam.department} 
+                    onChange={e => setNewCam({ ...newCam, department: e.target.value })} 
+                    className="input-field"
                     style={{ width: '100%' }}
-                  >
-                    <option value="Police / Traffic">Police / Traffic</option>
-                    <option value="Municipal Corporation">Municipal Corporation</option>
-                    <option value="Smart City VMS">Smart City VMS</option>
-                    <option value="Home Department">Home Department</option>
-                    <option value="RTO Checkpost">RTO Checkpost</option>
-                  </select>
+                  />
                 </div>
               </div>
 
-              <div>
-                <label style={{ fontSize: '11px', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Stream Source URL / File Path</label>
-                <input 
-                  type="text" 
-                  required
-                  placeholder="data/sample_feeds/traffic1.mp4 or rtsp://..." 
-                  value={newCam.stream_url}
-                  onChange={e => setNewCam({ ...newCam, stream_url: e.target.value })}
-                  className="input-field" 
-                  style={{ width: '100%' }}
-                />
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '8px' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
                 <button 
                   type="button" 
                   onClick={() => setShowAddModal(false)}
-                  style={{ background: 'transparent', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '6px 14px', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}
+                  className="btn-secondary"
                 >
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary">
-                  Save Camera
+                <button 
+                  type="submit" 
+                  className="btn-primary"
+                >
+                  Save Camera Node
                 </button>
               </div>
             </form>

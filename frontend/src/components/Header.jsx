@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Map, Video, Database, AlertOctagon, Route, Clock } from 'lucide-react';
+import { Shield, Map, Video, Database, AlertOctagon, Route, Clock, ShieldCheck, Activity } from 'lucide-react';
 
 export default function Header({ activeTab, setActiveTab }) {
   const [timeStr, setTimeStr] = useState('');
@@ -18,15 +18,8 @@ export default function Header({ activeTab, setActiveTab }) {
     <header className="header">
       {/* Brand Identity */}
       <div className="brand">
-        <div style={{
-          background: '#0284c7',
-          padding: '6px 8px',
-          borderRadius: '8px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          <Shield size={20} color="#ffffff" />
+        <div className="brand-icon">
+          <Shield size={20} />
         </div>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -69,28 +62,34 @@ export default function Header({ activeTab, setActiveTab }) {
         >
           <Route size={15} /> Vehicle Route Trace
         </button>
+        <button 
+          className={`tab-btn ${activeTab === 'evidence' ? 'active' : ''}`}
+          onClick={() => setActiveTab('evidence')}
+        >
+          <ShieldCheck size={15} /> BSA 2023 Evidence Vault
+        </button>
       </nav>
 
       {/* System Telemetry & Clock */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
         <div className="status-pill status-active">
           <span className="status-dot"></span>
-          <span>5 Cameras Active</span>
+          <span>5 Feeds Active</span>
         </div>
 
         <div style={{
           display: 'flex',
           alignItems: 'center',
           gap: '6px',
-          background: 'rgba(255, 255, 255, 0.04)',
+          background: 'rgba(255, 255, 255, 0.08)',
           padding: '5px 10px',
-          borderRadius: '6px',
+          borderRadius: '4px',
           fontSize: '12px',
           fontFamily: 'var(--font-mono)',
-          color: '#94a3b8',
-          border: '1px solid rgba(255, 255, 255, 0.08)'
+          color: '#ffffff',
+          border: '1px solid rgba(255, 255, 255, 0.15)'
         }}>
-          <Clock size={14} />
+          <Clock size={14} color="#fe932c" />
           <span>{timeStr || '16:10:00 IST'}</span>
         </div>
       </div>

@@ -30,8 +30,14 @@ def get_camera_by_id(camera_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"Camera with ID '{camera_id}' not found.")
     return camera
 
+from app.auth import require_role_permission
+
 @router.post("", response_model=CameraResponse, status_code=201)
-def create_camera(camera_in: CameraCreate, db: Session = Depends(get_db)):
+def create_camera(
+    camera_in: CameraCreate, 
+    db: Session = Depends(get_db),
+    role: str = Depends(require_role_permission("write_camera"))
+):
     existing = db.query(Camera).filter(Camera.camera_id == camera_in.camera_id).first()
     if existing:
         raise HTTPException(status_code=400, detail=f"Camera with ID '{camera_in.camera_id}' already exists.")
