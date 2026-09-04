@@ -24,6 +24,12 @@ class Settings(BaseSettings):
     SENTINEL_PASS: str = os.getenv("SENTINEL_PASS", "")
     SENTINEL_HOST: str = os.getenv("SENTINEL_HOST", "https://cctv.corp8.cloud")
 
+    # S3 Object Storage Options (MinIO)
+    S3_ENDPOINT_URL: str = os.getenv("S3_ENDPOINT_URL", "http://localhost:9000")
+    S3_ACCESS_KEY: str = os.getenv("S3_ACCESS_KEY", "minioadmin")
+    S3_SECRET_KEY: str = os.getenv("S3_SECRET_KEY", "minioadmin")
+    S3_BUCKET_NAME: str = os.getenv("S3_BUCKET_NAME", "netra-gp-media")
+
     class Config:
         case_sensitive = True
 
