@@ -1,5 +1,7 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
+from app.api.deps import get_current_active_user, verify_department_access
+from app.models import User
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Camera
@@ -12,13 +14,18 @@ def get_cameras(
     city: Optional[str] = Query(None, description="Filter cameras by city"),
     department: Optional[str] = Query(None, description="Filter cameras by department"),
     status: Optional[str] = Query(None, description="Filter cameras by status"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
 ):
     query = db.query(Camera)
+    
+    if current_user.role.name != "Superadmin":
+        query = query.filter(Camera.department == current_user.department.name)
+    elif department:
+        query = query.filter(Camera.department.ilike(f"%{department}%"))
+        
     if city:
         query = query.filter(Camera.city.ilike(f"%{city}%"))
-    if department:
-        query = query.filter(Camera.department.ilike(f"%{department}%"))
     if status:
         query = query.filter(Camera.status == status)
     return query.all()
@@ -30,14 +37,13 @@ def get_camera_by_id(camera_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail=f"Camera with ID '{camera_id}' not found.")
     return camera
 
-from app.auth import require_role_permission
-
 @router.post("", response_model=CameraResponse, status_code=201)
 def create_camera(
     camera_in: CameraCreate, 
     db: Session = Depends(get_db),
-    role: str = Depends(require_role_permission("write_camera"))
+    current_user: User = Depends(get_current_active_user)
 ):
+    verify_department_access(camera_in.department, current_user)
     existing = db.query(Camera).filter(Camera.camera_id == camera_in.camera_id).first()
     if existing:
         raise HTTPException(status_code=400, detail=f"Camera with ID '{camera_in.camera_id}' already exists.")
