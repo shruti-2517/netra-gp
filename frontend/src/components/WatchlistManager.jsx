@@ -101,7 +101,7 @@ export default function WatchlistManager() {
           <Search size={16} color="#74777f" />
           <input 
             type="text" 
-            placeholder="Search by License Plate (e.g. GJ01AB1234), Reason, or Owner..."
+            placeholder="Search by License Plate (e.g. GJ01HY5842), Reason, or Owner..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             style={{ background: 'transparent', border: 'none', color: '#191c1e', outline: 'none', width: '100%', fontSize: '13px' }}

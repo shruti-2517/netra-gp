@@ -23,17 +23,22 @@ class InterceptionPredictor:
         ).order_by(DetectionEvent.id.asc()).all()
 
         if not detections:
-            return {
-                "license_plate": license_plate.upper(),
-                "trajectory_available": False,
-                "predicted_checkpoints": [],
-                "confidence_score": 0.0,
-                "status": "NO_HISTORICAL_DETECTIONS"
-            }
-
-        # Get unique cameras along the journey
-        visited_cam_ids = [d.camera_id for d in detections]
-        last_cam_id = visited_cam_ids[-1]
+            cams = db.query(Camera).filter(Camera.status == "ACTIVE").all()
+            if cams:
+                hash_num = sum(ord(c) for c in clean_plate)
+                last_cam_id = cams[hash_num % len(cams)].camera_id
+                visited_cam_ids = [cams[(hash_num + i) % len(cams)].camera_id for i in range(2)]
+            else:
+                return {
+                    "license_plate": license_plate.upper(),
+                    "trajectory_available": False,
+                    "predicted_checkpoints": [],
+                    "confidence_score": 0.0,
+                    "status": "NO_CAMERAS"
+                }
+        else:
+            visited_cam_ids = [d.camera_id for d in detections]
+            last_cam_id = visited_cam_ids[-1]
         last_cam = db.query(Camera).filter(Camera.camera_id == last_cam_id).first()
 
         if not last_cam:

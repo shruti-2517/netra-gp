@@ -331,9 +331,35 @@ export default function AlertFeed({ onWsStatusChange }) {
             </div>
           ) : (
             filteredAlerts.map(a => {
-              const isCrit = a.threat_level === 'CRITICAL';
-              const isHigh = a.threat_level === 'HIGH';
-              const isSpeed = a.event === 'SPEED_VIOLATION_ALERT' || (a.reason && a.reason.includes('Overspeeding'));
+              const isSpeed = a.event === 'SPEED_VIOLATION_ALERT' || 
+                              a.is_speed_violation || 
+                              Boolean(a.speed_kmh) || 
+                              (a.reason && (
+                                a.reason.toLowerCase().includes('overspeeding') || 
+                                a.reason.toLowerCase().includes('speed') || 
+                                a.reason.toLowerCase().includes('km/h') ||
+                                a.reason.toLowerCase().includes('limit')
+                              ));
+              const isCrit = !isSpeed && a.threat_level === 'CRITICAL';
+              const isHigh = !isSpeed && a.threat_level === 'HIGH';
+
+              let badgeText = '📸 ANPR SCAN';
+              let badgeBg = '#e2e8f0';
+              let badgeColor = '#334155';
+
+              if (isSpeed) {
+                badgeText = '⚡ SPEED VIOLATION';
+                badgeBg = '#e0f2fe';
+                badgeColor = '#0369a1';
+              } else if (isCrit) {
+                badgeText = '🚨 CRITICAL WATCHLIST';
+                badgeBg = '#ffdad6';
+                badgeColor = '#ba1a1a';
+              } else if (isHigh) {
+                badgeText = '⚠️ HIGH WATCHLIST';
+                badgeBg = '#ffedd5';
+                badgeColor = '#9a3412';
+              }
 
               return (
                 <div 
@@ -361,10 +387,10 @@ export default function AlertFeed({ onWsStatusChange }) {
                       fontSize: '10px',
                       fontWeight: 700,
                       fontFamily: 'var(--font-headline)',
-                      background: isCrit ? '#ffdad6' : isHigh ? '#ffedd5' : isSpeed ? '#e0f2fe' : '#e2e8f0',
-                      color: isCrit ? '#ba1a1a' : isHigh ? '#9a3412' : isSpeed ? '#0369a1' : '#334155'
+                      background: badgeBg,
+                      color: badgeColor
                     }}>
-                      {isCrit ? '🚨 CRITICAL THREAT' : isHigh ? '⚠️ HIGH WATCHLIST' : isSpeed ? '⚡ SPEED VIOLATION' : '📸 ANPR SCAN'}
+                      {badgeText}
                     </span>
                     <span style={{ fontSize: '10px', color: '#74777f', fontFamily: 'var(--font-mono)', fontWeight: 600 }}>
                       {a.timestamp ? (a.timestamp.includes('T') ? a.timestamp.split('T')[1].replace('Z','') : a.timestamp) : 'JUST NOW'}

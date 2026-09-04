@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import logging
-from app.config import CVConfig, normalize_plate_number
+from .config import CVConfig, normalize_plate_number
 
 logger = logging.getLogger("PlateOCREngine")
 
@@ -16,37 +16,18 @@ class PlateOCREngine:
         except Exception as e:
             logger.warning(f"EasyOCR initialization issue ({e}). Using basic OCR fallback mode.")
 
-    def preprocess_crop(self, crop):
-        """
-        Enhance plate image contrast and readability for OCR
-        """
-        if crop is None or crop.size == 0:
-            return None
-        
-        # Convert to grayscale
-        gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
-        
-        # Resize if crop is small
-        h, w = gray.shape
-        if h < 60 or w < 160:
-            gray = cv2.resize(gray, (w * 2, h * 2), interpolation=cv2.INTER_CUBIC)
-            
-        # Bilateral filter to smooth noise while keeping edges sharp
-        filtered = cv2.bilateralFilter(gray, 11, 17, 17)
-        
-        # Otsu thresholding
-        _, thresh = cv2.threshold(filtered, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        
-        return thresh
-
     def extract_text(self, crop):
         if crop is None or crop.size == 0:
-            return None
+            return {'raw_text': '', 'normalized_plate': '', 'confidence': 0.0}
 
-        # Clean 2x/3x enlarged grayscale image for EasyOCR
-        gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+        # 3x Bicubic Upscaling & Grayscale Conversion
+        if len(crop.shape) == 3:
+            gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY)
+        else:
+            gray = crop.copy()
+
         h, w = gray.shape
-        if h < 80 or w < 200:
+        if h < 90 or w < 220:
             gray = cv2.resize(gray, (w * 3, h * 3), interpolation=cv2.INTER_CUBIC)
 
         raw_text = ""
@@ -54,14 +35,23 @@ class PlateOCREngine:
 
         if self.reader:
             try:
-                results = self.reader.readtext(gray, allowlist='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+                # Pass 1: Contrast Enhancement with CLAHE
+                clahe = cv2.createCLAHE(clipLimit=3.5, tileGridSize=(8, 8))
+                enhanced = clahe.apply(gray)
+                results = self.reader.readtext(enhanced, allowlist='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+
+                # Pass 2: Retry with Otsu Binary Thresholding if Pass 1 yielded no text
                 if not results:
-                    # Retry with contrast stretching
-                    enhanced = cv2.equalizeHist(gray)
-                    results = self.reader.readtext(enhanced, allowlist='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
-                
+                    _, otsu_inv = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+                    results = self.reader.readtext(otsu_inv, allowlist='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+
+                # Pass 3: Retry with Grayscale Equalized Histogram
+                if not results:
+                    eq = cv2.equalizeHist(gray)
+                    results = self.reader.readtext(eq, allowlist='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789')
+
                 if results:
-                    # Sort text blocks left-to-right based on bounding box x-coordinate
+                    # Sort left-to-right based on bounding box x-min coordinate
                     results_sorted = sorted(results, key=lambda item: item[0][0][0])
                     raw_text = " ".join([item[1] for item in results_sorted])
                     confidence = sum([float(item[2]) for item in results_sorted]) / len(results_sorted)
@@ -73,5 +63,5 @@ class PlateOCREngine:
         return {
             'raw_text': raw_text,
             'normalized_plate': normalized,
-            'confidence': confidence
+            'confidence': round(confidence, 2)
         }

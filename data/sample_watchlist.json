@@ -1,10 +1,10 @@
 [
   {
     "watchlist_id": "WL-001",
-    "license_plate": "GJ01AB1234",
+    "license_plate": "GJ01HY5842",
     "vehicle_make": "Hyundai Creta",
     "color": "White",
-    "reason": "Stolen Vehicle FIR #2026/089",
+    "reason": "Stolen Vehicle FIR #2026/089 (Navrangpura PS)",
     "category": "STOLEN",
     "threat_level": "HIGH",
     "owner_name": "Unknown Suspect",
@@ -12,7 +12,7 @@
   },
   {
     "watchlist_id": "WL-002",
-    "license_plate": "GJ18CD5678",
+    "license_plate": "GJ18BF4092",
     "vehicle_make": "Mahindra Scorpio",
     "color": "Black",
     "reason": "Wanted in Robbery Case (Crime Branch)",
@@ -23,7 +23,7 @@
   },
   {
     "watchlist_id": "WL-003",
-    "license_plate": "GJ05EF9012",
+    "license_plate": "GJ05CK3311",
     "vehicle_make": "Maruti Swift",
     "color": "Silver",
     "reason": "Expired Permit / Suspicious Registration",
@@ -31,5 +31,16 @@
     "threat_level": "MEDIUM",
     "owner_name": "Suresh Shah",
     "added_at": "2026-08-30T09:15:00Z"
+  },
+  {
+    "watchlist_id": "WL-004",
+    "license_plate": "GJ27EV1024",
+    "vehicle_make": "Tata Nexon EV",
+    "color": "Blue",
+    "reason": "Vehicle Involved in Hit & Run Incident",
+    "category": "CRIMINAL_WANTED",
+    "threat_level": "CRITICAL",
+    "owner_name": "Vikram Desai",
+    "added_at": "2026-08-31T11:20:00Z"
   }
 ]

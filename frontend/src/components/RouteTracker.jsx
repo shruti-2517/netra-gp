@@ -51,10 +51,11 @@ const EMPTY_ROUTE_DATA = {
 };
 
 export default function RouteTracker() {
-  const [searchPlate, setSearchPlate] = useState('GJ01AB1234');
+  const [searchPlate, setSearchPlate] = useState('');
   const [routeData, setRouteData] = useState(EMPTY_ROUTE_DATA);
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [actualDetectedPlates, setActualDetectedPlates] = useState([]);
 
   const fetchRouteAndPrediction = (plate) => {
     if (!plate) return;
@@ -88,8 +89,21 @@ export default function RouteTracker() {
       .finally(() => setLoading(false));
   };
 
+  // Fetch actual live detected plates from backend API
   useEffect(() => {
-    fetchRouteAndPrediction(searchPlate);
+    fetch(`${API_BASE_URL}/api/v1/alerts`)
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          const plates = Array.from(new Set(data.map(a => a.license_plate).filter(Boolean)));
+          setActualDetectedPlates(plates);
+          if (plates.length > 0 && !searchPlate) {
+            setSearchPlate(plates[0]);
+            fetchRouteAndPrediction(plates[0]);
+          }
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const waypoints = routeData?.waypoints || [];
@@ -135,7 +149,7 @@ export default function RouteTracker() {
         <div style={{ display: 'flex', gap: '8px' }}>
           <input 
             type="text" 
-            placeholder="Enter Plate (e.g. GJ01AB1234)"
+            placeholder="Enter Plate (e.g. GJ01HY5842)" 
             value={searchPlate}
             onChange={e => setSearchPlate(e.target.value.toUpperCase())}
             className="input-field"
@@ -149,6 +163,32 @@ export default function RouteTracker() {
             <Search size={15} /> Analyze
           </button>
         </div>
+
+        {/* Dynamic Actual Detected License Plates Selector */}
+        {actualDetectedPlates.length > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '10px', color: '#74777f', fontWeight: 700 }}>DETECTED TARGETS:</span>
+            {actualDetectedPlates.slice(0, 6).map(plate => (
+              <button
+                key={plate}
+                onClick={() => { setSearchPlate(plate); fetchRouteAndPrediction(plate); }}
+                style={{
+                  padding: '3px 8px',
+                  fontSize: '10px',
+                  fontFamily: 'var(--font-mono)',
+                  fontWeight: 700,
+                  borderRadius: '3px',
+                  border: searchPlate === plate ? '1px solid #1a365d' : '1px solid #cbd5e1',
+                  background: searchPlate === plate ? '#1a365d' : '#f1f5f9',
+                  color: searchPlate === plate ? '#ffffff' : '#1e293b',
+                  cursor: 'pointer'
+                }}
+              >
+                {plate}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Target Dossier Header Card */}
         <div style={{

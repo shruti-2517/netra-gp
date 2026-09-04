@@ -151,7 +151,7 @@ export default function EvidenceVault() {
           <Search size={18} style={{ position: 'absolute', left: '14px', top: '10px', color: '#74777f' }} />
           <input
             type="text"
-            placeholder="Search by License Plate (e.g. GJ01AB1234), Certificate ID, or Camera ID..."
+            placeholder="Search by License Plate (e.g. GJ01HY5842), Certificate ID, or Camera ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="input-field"
