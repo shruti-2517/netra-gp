@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, ChevronRight, ChevronLeft, Trash2, ShieldAlert, AlertTriangle, Zap, Volume2, VolumeX, Radio } from 'lucide-react';
+import { API_BASE_URL, WS_BASE_URL } from '../config';
 
 export default function AlertFeed({ onWsStatusChange }) {
   const [alerts, setAlerts] = useState([]);
@@ -31,7 +32,7 @@ export default function AlertFeed({ onWsStatusChange }) {
 
   // 1. Fetch latest alerts from REST API
   const fetchAlerts = () => {
-    fetch('http://localhost:8000/api/v1/alerts')
+    fetch(`${API_BASE_URL}/api/v1/alerts`)
       .then(res => res.json())
       .then(data => {
         if (data && Array.isArray(data)) {
@@ -51,7 +52,7 @@ export default function AlertFeed({ onWsStatusChange }) {
 
     const connectWS = () => {
       try {
-        const ws = new WebSocket('ws://localhost:8000/api/v1/ws/alerts');
+        const ws = new WebSocket(`${WS_BASE_URL}/api/v1/ws/alerts`);
         wsRef.current = ws;
 
         ws.onopen = () => {
@@ -101,7 +102,7 @@ export default function AlertFeed({ onWsStatusChange }) {
   }, [isSoundEnabled]);
 
   const handleClearAlerts = () => {
-    fetch('http://localhost:8000/api/v1/alerts', { method: 'DELETE' })
+    fetch(`${API_BASE_URL}/api/v1/alerts`, { method: 'DELETE' })
       .then(res => res.json())
       .then(() => {
         setAlerts([]);

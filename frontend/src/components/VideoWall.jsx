@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Maximize2, Video, Camera, Upload, Radio, ShieldAlert, Zap, CheckCircle2 } from 'lucide-react';
+import { API_BASE_URL } from '../config';
 
-const CAMERAS = [
+const DEFAULT_CAMERAS = [
   {
     id: "CAM-AHM-001",
     name: "SG Highway - Iscon Crossroad",
@@ -81,7 +82,7 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPl
           octx.drawImage(vid, 0, 0, 640, 480);
           const b64 = offscreen.toDataURL('image/jpeg', 0.8);
 
-          fetch('http://localhost:8000/api/v1/detections/scan-frame', {
+          fetch(`${API_BASE_URL}/api/v1/detections/scan-frame`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -116,7 +117,7 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPl
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
         // Send uploaded image to backend OCR
-        fetch('http://localhost:8000/api/v1/detections/scan-frame', {
+        fetch(`${API_BASE_URL}/api/v1/detections/scan-frame`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -216,27 +217,7 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPl
         const carX = width - progress * (width + carW + 50);
         const carY = height * 0.55 - 40;
 
-        // Auto Dispatch to backend on crossing checkpoint
-        if (progress > 0.45 && progress < 0.55 && lastDispatched !== `${vehicleIdx}-${cam.id}`) {
-          lastDispatched = `${vehicleIdx}-${cam.id}`;
-          
-          fetch('http://localhost:8000/api/v1/detections', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              camera_id: cam.id,
-              timestamp: new Date().toISOString(),
-              license_plate: v.plate,
-              raw_ocr_text: v.plate,
-              vehicle_color: v.colorName,
-              vehicle_type: v.type,
-              detection_confidence: 0.95,
-              ocr_confidence: 0.98,
-              bbox: [Math.round(carX), Math.round(carY), Math.round(carX + carW), Math.round(carY + carH)]
-            })
-          }).catch(() => {});
-        }
-
+        // Progress animation for highway preview
         if (carX > -carW && carX < width + 50) {
           ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
           ctx.beginPath();
@@ -324,11 +305,32 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPl
 }
 
 export default function VideoWall() {
+  const [cameras, setCameras] = useState(DEFAULT_CAMERAS);
   const [isWebcamActive, setIsWebcamActive] = useState(false);
   const [webcamStream, setWebcamStream] = useState(null);
   const [uploadedImage, setUploadedImage] = useState(null);
   const [latestDetectedPlate, setLatestDetectedPlate] = useState(null);
   const fileInputRef = useRef(null);
+
+  // Dynamically fetch camera catalogue from backend API (/api/ingest)
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/ingest`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && Array.isArray(data) && data.length > 0) {
+          const mappedCams = data.map(c => ({
+            id: c.camera_id || c.id,
+            name: c.name,
+            city: c.city,
+            dept: c.department || "Traffic Police",
+            speedLimit: c.speed_limit || 80,
+            vehicles: c.vehicles || []
+          }));
+          setCameras(mappedCams);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const toggleWebcam = async () => {
     if (isWebcamActive && !uploadedImage) {
@@ -438,7 +440,7 @@ export default function VideoWall() {
         gap: '18px',
         flex: 1
       }}>
-        {CAMERAS.map((cam, idx) => {
+        {cameras.map((cam, idx) => {
           const isThisWebcam = isWebcamActive && idx === 0;
 
           return (
