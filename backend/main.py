@@ -13,7 +13,7 @@ from app.models import Camera
 from app.seed import seed_initial_data
 from app.services.websocket_manager import manager
 from app.services.live_streamer import generate_live_stream_frames
-from app.api.v1.routers import cameras, watchlist, detections, reports
+from app.api.v1.routers import auth, cameras, watchlist, detections, reports
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("NETRA-GP-Backend")
@@ -48,6 +48,7 @@ app.add_middleware(
 )
 
 # Include API Routers
+app.include_router(auth.router, prefix=settings.API_V1_STR)
 app.include_router(cameras.router, prefix=settings.API_V1_STR)
 app.include_router(watchlist.router, prefix=settings.API_V1_STR)
 app.include_router(detections.router, prefix=settings.API_V1_STR)

@@ -126,3 +126,23 @@ class EvidenceCertificateResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+# Auth Schemas
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+class TokenData(BaseModel):
+    username: Optional[str] = None
+
+class UserBase(BaseModel):
+    username: str
+    is_active: bool = True
+    department_id: int
+    role_id: int
+
+class UserResponse(UserBase):
+    id: int
+
+    class Config:
+        from_attributes = True
