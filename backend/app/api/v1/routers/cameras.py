@@ -16,9 +16,9 @@ def get_cameras(
 ):
     query = db.query(Camera)
     if city:
-        query = query.filter(Camera.city.iloc(city))
+        query = query.filter(Camera.city.ilike(f"%{city}%"))
     if department:
-        query = query.filter(Camera.department.iloc(department))
+        query = query.filter(Camera.department.ilike(f"%{department}%"))
     if status:
         query = query.filter(Camera.status == status)
     return query.all()

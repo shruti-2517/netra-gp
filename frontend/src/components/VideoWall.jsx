@@ -3,54 +3,36 @@ import { Maximize2, Video, Camera, Upload, Radio, ShieldAlert, Zap, CheckCircle2
 import { API_BASE_URL } from '../config';
 
 const DEFAULT_CAMERAS = [
-  {
-    id: "CAM-AHM-001",
-    name: "SG Highway - Iscon Crossroad",
-    city: "Ahmedabad",
-    dept: "Traffic Police",
-    speedLimit: 80,
-    vehicles: [
-      { plate: "GJ01AB1234", type: "SEDAN", color: "#d9383a", colorName: "RED", speed: 122.7, isViolation: true },
-      { plate: "GJ01CD5678", type: "SUV", color: "#64748b", colorName: "SILVER", speed: 68.4, isViolation: false },
-      { plate: "GJ01XY9999", type: "HATCHBACK", color: "#f8fafc", colorName: "WHITE", speed: 74.0, isViolation: false }
-    ]
-  },
-  {
-    id: "CAM-GND-002",
-    name: "GH-5 Circle",
-    city: "Gandhinagar",
-    dept: "Municipal Corp",
-    speedLimit: 80,
-    vehicles: [
-      { plate: "GJ18EF9012", type: "SUV", color: "#0f172a", colorName: "BLACK", speed: 88.5, isViolation: true },
-      { plate: "GJ18AB4321", type: "SEDAN", color: "#f1f5f9", colorName: "WHITE", speed: 62.1, isViolation: false },
-      { plate: "GJ18ZZ7777", type: "BUS", color: "#15803d", colorName: "GREEN", speed: 55.0, isViolation: false }
-    ]
-  },
-  {
-    id: "CAM-SRT-003",
-    name: "Ring Road - Textile Market",
-    city: "Surat",
-    dept: "Smart City VMS",
-    speedLimit: 70,
-    vehicles: [
-      { plate: "GJ05XY8888", type: "BUS", color: "#eab308", colorName: "YELLOW", speed: 58.2, isViolation: false },
-      { plate: "GJ05KL1234", type: "SEDAN", color: "#2563eb", colorName: "BLUE", speed: 72.4, isViolation: false },
-      { plate: "GJ05MN5555", type: "SUV", color: "#475569", colorName: "GREY", speed: 65.0, isViolation: false }
-    ]
-  },
-  {
-    id: "CAM-BRD-004",
-    name: "Alkapuri Underpass",
-    city: "Vadodara",
-    dept: "Home Dept",
-    speedLimit: 60,
-    vehicles: [
-      { plate: "GJ06MN5678", type: "HATCHBACK", color: "#16a34a", colorName: "GREEN", speed: 54.0, isViolation: false },
-      { plate: "GJ06OP9012", type: "SUV", color: "#94a3b8", colorName: "SILVER", speed: 68.2, isViolation: true },
-      { plate: "GJ06AB1111", type: "SEDAN", color: "#b91c1c", colorName: "RED", speed: 59.0, isViolation: false }
-    ]
-  }
+  { id: "cam01", name: "Ahmedabad - SG Highway Iscon Crossroad", city: "Ahmedabad", dept: "Police / Traffic", stream_url: "https://cctv.corp8.cloud/cam01/index.m3u8" },
+  { id: "cam02", name: "Ahmedabad - SG Highway Bopal Junction", city: "Ahmedabad", dept: "Police / Traffic", stream_url: "https://cctv.corp8.cloud/cam02/index.m3u8" },
+  { id: "cam03", name: "Ahmedabad - C G Road Ellisbridge", city: "Ahmedabad", dept: "Municipal Corporation", stream_url: "https://cctv.corp8.cloud/cam03/index.m3u8" },
+  { id: "cam04", name: "Ahmedabad - Narol Highway Checkpost", city: "Ahmedabad", dept: "RTO Checkpost", stream_url: "https://cctv.corp8.cloud/cam04/index.m3u8" },
+  { id: "cam05", name: "Ahmedabad - SP Ring Road Vaishnodevi", city: "Ahmedabad", dept: "Police / Traffic", stream_url: "https://cctv.corp8.cloud/cam05/index.m3u8" },
+  { id: "cam06", name: "Gandhinagar - GH-5 Circle Central", city: "Gandhinagar", dept: "Home Department", stream_url: "https://cctv.corp8.cloud/cam06/index.m3u8" },
+  { id: "cam07", name: "Gandhinagar - CH-0 Circle Secretariat", city: "Gandhinagar", dept: "Home Department", stream_url: "https://cctv.corp8.cloud/cam07/index.m3u8" },
+  { id: "cam08", name: "Gandhinagar - Infocity IT Park Gate", city: "Gandhinagar", dept: "Smart City VMS", stream_url: "https://cctv.corp8.cloud/cam08/index.m3u8" },
+  { id: "cam09", name: "Gandhinagar - Koba Circle Toll Gate", city: "Gandhinagar", dept: "RTO Checkpost", stream_url: "https://cctv.corp8.cloud/cam09/index.m3u8" },
+  { id: "cam10", name: "Gandhinagar - GIFT City Expressway", city: "Gandhinagar", dept: "Smart City VMS", stream_url: "https://cctv.corp8.cloud/cam10/index.m3u8" },
+  { id: "cam11", name: "Surat - Ring Road Textile Market", city: "Surat", dept: "Smart City VMS", stream_url: "https://cctv.corp8.cloud/cam11/index.m3u8" },
+  { id: "cam12", name: "Surat - Adajan Hazira Highway Junction", city: "Surat", dept: "Police / Traffic", stream_url: "https://cctv.corp8.cloud/cam12/index.m3u8" },
+  { id: "cam13", name: "Surat - Varachha Diamond Market", city: "Surat", dept: "Municipal Corporation", stream_url: "https://cctv.corp8.cloud/cam13/index.m3u8" },
+  { id: "cam14", name: "Surat - Udhna Magdalla Highway", city: "Surat", dept: "RTO Checkpost", stream_url: "https://cctv.corp8.cloud/cam14/index.m3u8" },
+  { id: "cam15", name: "Surat - Kamrej Toll Plaza Entrance", city: "Surat", dept: "Police / Traffic", stream_url: "https://cctv.corp8.cloud/cam15/index.m3u8" },
+  { id: "cam16", name: "Vadodara - Alkapuri Underpass", city: "Vadodara", dept: "Home Department", stream_url: "https://cctv.corp8.cloud/cam16/index.m3u8" },
+  { id: "cam17", name: "Vadodara - Golden Circle Highway", city: "Vadodara", dept: "Police / Traffic", stream_url: "https://cctv.corp8.cloud/cam17/index.m3u8" },
+  { id: "cam18", name: "Vadodara - Sayajigunj Railway Station Circle", city: "Vadodara", dept: "Municipal Corporation", stream_url: "https://cctv.corp8.cloud/cam18/index.m3u8" },
+  { id: "cam19", name: "Vadodara - Makarpura Industrial Corridor", city: "Vadodara", dept: "Smart City VMS", stream_url: "https://cctv.corp8.cloud/cam19/index.m3u8" },
+  { id: "cam20", name: "Vadodara - Express Highway Checkpost", city: "Vadodara", dept: "RTO Checkpost", stream_url: "https://cctv.corp8.cloud/cam20/index.m3u8" },
+  { id: "cam21", name: "Rajkot - Kalawad Road Junction", city: "Rajkot", dept: "RTO Checkpost", stream_url: "https://cctv.corp8.cloud/cam21/index.m3u8" },
+  { id: "cam22", name: "Rajkot - 150 Feet Ring Road Circle", city: "Rajkot", dept: "Police / Traffic", stream_url: "https://cctv.corp8.cloud/cam22/index.m3u8" },
+  { id: "cam23", name: "Rajkot - Yagnik Road Market Axis", city: "Rajkot", dept: "Municipal Corporation", stream_url: "https://cctv.corp8.cloud/cam23/index.m3u8" },
+  { id: "cam24", name: "Rajkot - Metoda GIDC Industrial Highway", city: "Rajkot", dept: "Smart City VMS", stream_url: "https://cctv.corp8.cloud/cam24/index.m3u8" },
+  { id: "cam25", name: "Rajkot - Gondal Highway Checkpost", city: "Rajkot", dept: "Home Department", stream_url: "https://cctv.corp8.cloud/cam25/index.m3u8" },
+  { id: "cam26", name: "Bhavnagar - Waghawadi Road Circle", city: "Bhavnagar", dept: "Police / Traffic", stream_url: "https://cctv.corp8.cloud/cam26/index.m3u8" },
+  { id: "cam27", name: "Bhavnagar - Port Highway Junction", city: "Bhavnagar", dept: "RTO Checkpost", stream_url: "https://cctv.corp8.cloud/cam27/index.m3u8" },
+  { id: "cam28", name: "Jamnagar - Victoria Bridge Highway", city: "Jamnagar", dept: "Municipal Corporation", stream_url: "https://cctv.corp8.cloud/cam28/index.m3u8" },
+  { id: "cam29", name: "Junagadh - Girnar Darwaza Highway", city: "Junagadh", dept: "Police / Traffic", stream_url: "https://cctv.corp8.cloud/cam29/index.m3u8" },
+  { id: "cam30", name: "Anand - Amul Dairy Expressway Junction", city: "Anand", dept: "Smart City VMS", stream_url: "https://cctv.corp8.cloud/cam30/index.m3u8" }
 ];
 
 function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPlateDetected }) {
@@ -58,13 +40,35 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPl
   const videoRef = useRef(null);
   const [detectedPlate, setDetectedPlate] = useState(null);
 
-  // Webcam stream setup
+  // Live Stream Setup (HLS.js / HTML5 Video)
   useEffect(() => {
-    if (isWebcamMode && videoRef.current && webcamStream) {
-      videoRef.current.srcObject = webcamStream;
-      videoRef.current.play().catch(() => {});
+    const video = videoRef.current;
+    if (!video) return;
+
+    if (isWebcamMode && webcamStream) {
+      video.srcObject = webcamStream;
+      video.play().catch(() => {});
+    } else if (!isWebcamMode && cam && cam.stream_url) {
+      const streamUrl = cam.stream_url;
+      if (streamUrl.includes('.m3u8')) {
+        if (window.Hls && window.Hls.isSupported()) {
+          const hls = new window.Hls({ enableWorker: true, lowLatencyMode: true });
+          hls.loadSource(streamUrl);
+          hls.attachMedia(video);
+          hls.on(window.Hls.Events.MANIFEST_PARSED, () => {
+            video.play().catch(() => {});
+          });
+          return () => hls.destroy();
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = streamUrl;
+          video.play().catch(() => {});
+        }
+      } else {
+        video.src = streamUrl;
+        video.play().catch(() => {});
+      }
     }
-  }, [isWebcamMode, webcamStream]);
+  }, [cam, isWebcamMode, webcamStream]);
 
   // Real-time frame capture & Backend OCR scanning for webcam
   useEffect(() => {
@@ -87,7 +91,7 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPl
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               image_base64: b64,
-              camera_id: 'CAM-WEBCAM-LIVE'
+              camera_id: cam.id || 'CAM-WEBCAM-LIVE'
             })
           })
           .then(res => res.json())
@@ -103,7 +107,7 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPl
     }, 1000);
 
     return () => clearInterval(scanTimer);
-  }, [isWebcamMode, webcamStream]);
+  }, [isWebcamMode, webcamStream, cam]);
 
   // Handle Uploaded Image Mode
   useEffect(() => {
@@ -116,7 +120,6 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPl
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-        // Send uploaded image to backend OCR
         fetch(`${API_BASE_URL}/api/v1/detections/scan-frame`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -137,151 +140,62 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPl
     }
   }, [uploadedImage, isWebcamMode]);
 
-  // Animated Live Canvas Feed
+  // Live Video Frame Render Loop onto Canvas with Bounding Box Telemetry Overlay
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     let animationId;
-    let progress = 0;
-    let vehicleIdx = 0;
-    let lastDispatched = '';
 
     const render = () => {
       const width = canvas.width;
       const height = canvas.height;
+      const vid = videoRef.current;
 
-      if (isWebcamMode) {
-        if (videoRef.current && videoRef.current.readyState >= 2 && !uploadedImage) {
-          ctx.drawImage(videoRef.current, 0, 0, width, height);
+      if (vid && vid.readyState >= 2 && !uploadedImage) {
+        ctx.drawImage(vid, 0, 0, width, height);
 
-          // Draw live YOLO detection bounding box
-          const bx = width * 0.15;
-          const by = height * 0.22;
-          const bw = width * 0.70;
-          const bh = height * 0.60;
+        // Draw live ANPR YOLO Bounding Box Overlay
+        const bx = width * 0.15;
+        const by = height * 0.22;
+        const bw = width * 0.70;
+        const bh = height * 0.60;
 
-          ctx.strokeStyle = detectedPlate ? '#22c55e' : '#fe932c';
-          ctx.lineWidth = 3;
-          ctx.strokeRect(bx, by, bw, bh);
+        ctx.strokeStyle = detectedPlate ? '#22c55e' : '#fe932c';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(bx, by, bw, bh);
 
-          ctx.fillStyle = '#002045';
-          ctx.fillRect(bx, by - 30, bw, 30);
-          ctx.fillStyle = detectedPlate ? '#22c55e' : '#fe932c';
-          ctx.font = 'bold 13px monospace';
-          ctx.fillText(
-            detectedPlate 
-              ? `✓ ANPR DETECTED: [ ${detectedPlate} ]` 
-              : '● SCANNING CAMERA FOR NUMBER PLATE...', 
-            bx + 10, 
-            by - 10
-          );
+        ctx.fillStyle = '#002045';
+        ctx.fillRect(bx, by - 30, bw, 30);
+        ctx.fillStyle = detectedPlate ? '#22c55e' : '#fe932c';
+        ctx.font = 'bold 13px monospace';
+        ctx.fillText(
+          detectedPlate 
+            ? `✓ ANPR DETECTED: [ ${detectedPlate} ]` 
+            : '● SCANNING STREAM FOR LICENSE PLATE...', 
+          bx + 10, 
+          by - 10
+        );
 
-          ctx.fillStyle = 'rgba(0, 32, 69, 0.85)';
-          ctx.fillRect(10, 10, 240, 32);
-          ctx.fillStyle = '#fe932c';
-          ctx.font = 'bold 12px monospace';
-          ctx.fillText('● LIVE WEBCAM | 1080p', 18, 30);
-        }
-      } else {
-        // Surveillance Highway Canvas
-        ctx.fillStyle = '#1e242b';
+        ctx.fillStyle = 'rgba(0, 32, 69, 0.85)';
+        ctx.fillRect(10, 10, 260, 32);
+        ctx.fillStyle = isWebcamMode ? '#fe932c' : '#22c55e';
+        ctx.font = 'bold 12px monospace';
+        ctx.fillText(
+          isWebcamMode 
+            ? '● LIVE WEBCAM | 1080p' 
+            : `● LIVE SENTINEL | ${cam.id || 'CCTV'}`, 
+          18, 
+          30
+        );
+      } else if (!isWebcamMode && !uploadedImage) {
+        // Dark slate placeholder while stream loads
+        ctx.fillStyle = '#0f172a';
         ctx.fillRect(0, 0, width, height);
 
-        ctx.strokeStyle = '#38424d';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(0, height * 0.55);
-        ctx.lineTo(width, height * 0.55);
-        ctx.stroke();
-
-        ctx.strokeStyle = '#f8fafc';
-        ctx.lineWidth = 4;
-        const dashOffset = (Date.now() / 15) % 80;
-        ctx.beginPath();
-        for (let x = -80 + dashOffset; x < width + 80; x += 60) {
-          ctx.moveTo(x, height * 0.55);
-          ctx.lineTo(x + 30, height * 0.55);
-        }
-        ctx.stroke();
-
-        progress += 0.007;
-        if (progress > 1) {
-          progress = 0;
-          vehicleIdx = (vehicleIdx + 1) % cam.vehicles.length;
-        }
-
-        const v = cam.vehicles[vehicleIdx];
-        const carW = 180;
-        const carH = 85;
-        const carX = width - progress * (width + carW + 50);
-        const carY = height * 0.55 - 40;
-
-        // Progress animation for highway preview
-        if (carX > -carW && carX < width + 50) {
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-          ctx.beginPath();
-          ctx.ellipse(carX + carW/2, carY + carH, carW/2, 12, 0, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.fillStyle = v.color;
-          ctx.beginPath();
-          ctx.roundRect(carX, carY, carW, carH, 8);
-          ctx.fill();
-          ctx.strokeStyle = '#0f172a';
-          ctx.lineWidth = 2;
-          ctx.stroke();
-
-          ctx.fillStyle = '#334155';
-          ctx.beginPath();
-          ctx.roundRect(carX + 25, carY - 26, carW - 50, 26, 4);
-          ctx.fill();
-          ctx.strokeStyle = '#0f172a';
-          ctx.stroke();
-
-          ctx.fillStyle = '#0f172a';
-          ctx.beginPath();
-          ctx.arc(carX + 35, carY + carH - 2, 14, 0, Math.PI * 2);
-          ctx.arc(carX + carW - 35, carY + carH - 2, 14, 0, Math.PI * 2);
-          ctx.fill();
-
-          const pw = 96;
-          const ph = 26;
-          const px = carX + (carW - pw) / 2;
-          const py = carY + carH - ph - 8;
-
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(px, py, pw, ph);
-          ctx.strokeStyle = '#000000';
-          ctx.lineWidth = 1.5;
-          ctx.strokeRect(px, py, pw, ph);
-
-          ctx.fillStyle = '#1e3a8a';
-          ctx.fillRect(px, py, 12, ph);
-          ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 7px sans-serif';
-          ctx.fillText('IND', px + 1, py + 16);
-
-          ctx.fillStyle = '#000000';
-          ctx.font = 'bold 11px monospace';
-          ctx.fillText(v.plate, px + 16, py + 18);
-
-          ctx.strokeStyle = v.isViolation ? '#ef4444' : '#fe932c';
-          ctx.lineWidth = 2.5;
-          ctx.strokeRect(carX - 6, carY - 32, carW + 12, carH + 40);
-
-          ctx.fillStyle = '#002045';
-          ctx.fillRect(carX - 6, carY - 54, 150, 22);
-          ctx.fillStyle = v.isViolation ? '#ef4444' : '#fe932c';
-          ctx.font = 'bold 11px monospace';
-          ctx.fillText(`${v.type} | ${v.plate}`, carX - 2, carY - 38);
-        }
-
-        ctx.fillStyle = 'rgba(0, 32, 69, 0.9)';
-        ctx.fillRect(10, 10, 260, 32);
-        ctx.fillStyle = '#22c55e';
-        ctx.font = 'bold 12px monospace';
-        ctx.fillText(`● REC | ${cam.id}`, 18, 30);
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = 'bold 14px sans-serif';
+        ctx.fillText(`LOADING LIVE CCTV FEED [ ${cam.id} ]...`, width * 0.22, height * 0.5);
       }
 
       animationId = requestAnimationFrame(render);
@@ -306,6 +220,7 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPl
 
 export default function VideoWall() {
   const [cameras, setCameras] = useState(DEFAULT_CAMERAS);
+  const [currentPage, setCurrentPage] = useState(1);
   const [isWebcamActive, setIsWebcamActive] = useState(false);
   const [webcamStream, setWebcamStream] = useState(null);
   const [uploadedImage, setUploadedImage] = useState(null);
@@ -324,6 +239,7 @@ export default function VideoWall() {
             city: c.city,
             dept: c.department || "Traffic Police",
             speedLimit: c.speed_limit || 80,
+            stream_url: c.stream_url || (c.endpoints && c.endpoints.hls ? c.endpoints.hls : `https://cctv.corp8.cloud/${c.camera_id || c.id}/index.m3u8`),
             vehicles: c.vehicles || []
           }));
           setCameras(mappedCams);
@@ -394,6 +310,26 @@ export default function VideoWall() {
 
         {/* Live Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: '#f1f5f9', padding: '4px 8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}>
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              style={{ padding: '3px 8px', fontSize: '11px', fontWeight: 700, cursor: currentPage === 1 ? 'not-allowed' : 'pointer', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+            >
+              ◀ Prev
+            </button>
+            <span style={{ fontSize: '11px', fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#1e293b' }}>
+              Grid Page {currentPage} / {Math.ceil(cameras.length / 4)} ({cameras.length} Live Feeds)
+            </span>
+            <button
+              onClick={() => setCurrentPage(p => Math.min(Math.ceil(cameras.length / 4), p + 1))}
+              disabled={currentPage >= Math.ceil(cameras.length / 4)}
+              style={{ padding: '3px 8px', fontSize: '11px', fontWeight: 700, cursor: currentPage >= Math.ceil(cameras.length / 4) ? 'not-allowed' : 'pointer', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+            >
+              Next ▶
+            </button>
+          </div>
+
           <input
             type="file"
             ref={fileInputRef}
@@ -440,8 +376,8 @@ export default function VideoWall() {
         gap: '18px',
         flex: 1
       }}>
-        {cameras.map((cam, idx) => {
-          const isThisWebcam = isWebcamActive && idx === 0;
+        {cameras.slice((currentPage - 1) * 4, currentPage * 4).map((cam, idx) => {
+          const isThisWebcam = isWebcamActive && currentPage === 1 && idx === 0;
 
           return (
             <div 
@@ -513,7 +449,7 @@ export default function VideoWall() {
                     fontFamily: 'var(--font-mono)',
                     fontWeight: 700
                   }}>
-                    {isThisWebcam ? (latestDetectedPlate || "SCANNING...") : cam.vehicles[0].plate}
+                    {isThisWebcam ? (latestDetectedPlate || "SCANNING...") : (cam.vehicles && cam.vehicles[0] ? cam.vehicles[0].plate : "STANDBY")}
                   </span>
                 </div>
               </div>
