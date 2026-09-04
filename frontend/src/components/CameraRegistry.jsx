@@ -7,6 +7,8 @@ export default function CameraRegistry() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCity, setSelectedCity] = useState('ALL');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(30);
 
   const [newCam, setNewCam] = useState({
     camera_id: '',
@@ -23,7 +25,28 @@ export default function CameraRegistry() {
     fetch(`${API_BASE_URL}/api/v1/cameras`)
       .then(res => res.json())
       .then(data => {
-        if (data && Array.isArray(data)) setCameras(data);
+        if (data && Array.isArray(data) && data.length >= 30) {
+          setCameras(data);
+        } else {
+          // Fallback to catalogue endpoint if DB has fewer entries
+          fetch(`${API_BASE_URL}/api/ingest`)
+            .then(res => res.json())
+            .then(ingestData => {
+              if (ingestData && Array.isArray(ingestData)) {
+                setCameras(ingestData.map(c => ({
+                  camera_id: c.camera_id || c.id,
+                  name: c.name,
+                  department: c.department || "Police / Traffic",
+                  city: c.city || "Gujarat",
+                  latitude: c.latitude || 23.0,
+                  longitude: c.longitude || 72.5,
+                  type: c.type || "Sentinel Live Camera",
+                  status: (c.live_status || c.status || "ACTIVE").toUpperCase()
+                })));
+              }
+            })
+            .catch(() => {});
+        }
       })
       .catch(() => {});
   }, []);
@@ -52,6 +75,10 @@ export default function CameraRegistry() {
     const matchesCity = selectedCity === 'ALL' || c.city === selectedCity;
     return matchesSearch && matchesCity;
   });
+
+  const totalPages = Math.ceil(filteredCameras.length / pageSize) || 1;
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedCameras = filteredCameras.slice(startIndex, startIndex + pageSize);
 
   return (
     <div style={{ flex: 1, padding: '24px', background: '#f7f9fb', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '18px' }}>
@@ -96,11 +123,13 @@ export default function CameraRegistry() {
         display: 'flex',
         gap: '14px',
         alignItems: 'center',
+        justifyContent: 'space-between',
         flexWrap: 'wrap',
         boxShadow: '0 1px 3px rgba(0, 32, 69, 0.05)'
       }}>
         <div style={{
           flex: 1,
+          minWidth: '280px',
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
@@ -114,57 +143,76 @@ export default function CameraRegistry() {
             type="text" 
             placeholder="Search by Camera ID, Location Name, City, or Department..."
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             style={{ background: 'transparent', border: 'none', color: '#191c1e', outline: 'none', width: '100%', fontSize: '13px' }}
           />
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Filter size={15} color="#74777f" />
-          <select 
-            value={selectedCity}
-            onChange={e => setSelectedCity(e.target.value)}
-            className="input-field"
-            style={{ fontWeight: 600 }}
-          >
-            {cities.map(city => (
-              <option key={city} value={city}>
-                {city === 'ALL' ? 'All Gujarat Cities & Sectors' : city}
-              </option>
-            ))}
-          </select>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Filter size={15} color="#74777f" />
+            <select 
+              value={selectedCity}
+              onChange={e => { setSelectedCity(e.target.value); setCurrentPage(1); }}
+              className="input-field"
+              style={{ fontWeight: 600 }}
+            >
+              {cities.map(city => (
+                <option key={city} value={city}>
+                  {city === 'ALL' ? 'All Gujarat Cities & Sectors' : city}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ fontSize: '12px', color: '#43474e', fontWeight: 600 }}>Show:</span>
+            <select
+              value={pageSize}
+              onChange={e => { setPageSize(Number(e.target.value)); setCurrentPage(1); }}
+              className="input-field"
+              style={{ padding: '4px 8px', fontSize: '12px', fontWeight: 700 }}
+            >
+              <option value={10}>10 / Page</option>
+              <option value={20}>20 / Page</option>
+              <option value={30}>All 30 Nodes</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      {/* Table */}
+      {/* Scrollable Table Container */}
       <div style={{
         background: '#ffffff',
         borderRadius: '8px',
         border: '1px solid #c4c6cf',
-        overflow: 'hidden',
-        boxShadow: '0 2px 6px rgba(0, 32, 69, 0.06)'
+        overflowX: 'auto',
+        overflowY: 'auto',
+        maxHeight: 'calc(100vh - 250px)',
+        boxShadow: '0 2px 6px rgba(0, 32, 69, 0.06)',
+        flex: 1
       }}>
-        <table className="data-table-container">
-          <thead>
+        <table className="data-table-container" style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
+          <thead style={{ position: 'sticky', top: 0, zIndex: 10, background: '#002045' }}>
             <tr>
-              <th>Camera ID</th>
-              <th>Location Name</th>
-              <th>Department Owner</th>
-              <th>City / Sector</th>
-              <th>Coordinates (Lat / Lng)</th>
-              <th>Protocol / Type</th>
-              <th>Status</th>
+              <th style={{ background: '#002045', color: '#ffffff', position: 'sticky', top: 0 }}>Camera ID</th>
+              <th style={{ background: '#002045', color: '#ffffff', position: 'sticky', top: 0 }}>Location Name</th>
+              <th style={{ background: '#002045', color: '#ffffff', position: 'sticky', top: 0 }}>Department Owner</th>
+              <th style={{ background: '#002045', color: '#ffffff', position: 'sticky', top: 0 }}>City / Sector</th>
+              <th style={{ background: '#002045', color: '#ffffff', position: 'sticky', top: 0 }}>Coordinates (Lat / Lng)</th>
+              <th style={{ background: '#002045', color: '#ffffff', position: 'sticky', top: 0 }}>Protocol / Type</th>
+              <th style={{ background: '#002045', color: '#ffffff', position: 'sticky', top: 0 }}>Status</th>
             </tr>
           </thead>
           <tbody>
-            {filteredCameras.map(c => (
+            {paginatedCameras.map(c => (
               <tr key={c.camera_id}>
                 <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#1a365d' }}>{c.camera_id}</td>
                 <td style={{ fontWeight: 600, color: '#002045' }}>{c.name}</td>
                 <td style={{ color: '#43474e' }}>{c.department}</td>
                 <td style={{ fontWeight: 600 }}>{c.city}</td>
                 <td style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#74777f' }}>
-                  {c.latitude.toFixed(4)}, {c.longitude.toFixed(4)}
+                  {typeof c.latitude === 'number' ? c.latitude.toFixed(4) : c.latitude}, {typeof c.longitude === 'number' ? c.longitude.toFixed(4) : c.longitude}
                 </td>
                 <td>
                   <span style={{
@@ -200,6 +248,60 @@ export default function CameraRegistry() {
             ))}
           </tbody>
         </table>
+
+        {/* Pagination Footer Toolbar */}
+        <div style={{
+          background: '#f8fafc',
+          padding: '10px 18px',
+          borderTop: '1px solid #e2e8f0',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          fontSize: '12px',
+          color: '#475569'
+        }}>
+          <div>
+            Showing <strong>{startIndex + 1}</strong> to <strong>{Math.min(startIndex + pageSize, filteredCameras.length)}</strong> of <strong>{filteredCameras.length}</strong> Camera Nodes
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              style={{
+                padding: '4px 10px',
+                fontSize: '12px',
+                fontWeight: 600,
+                borderRadius: '4px',
+                border: '1px solid #cbd5e1',
+                background: currentPage === 1 ? '#f1f5f9' : '#ffffff',
+                cursor: currentPage === 1 ? 'not-allowed' : 'pointer'
+              }}
+            >
+              ◀ Prev
+            </button>
+            
+            <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+              Page {currentPage} of {totalPages}
+            </span>
+
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages}
+              style={{
+                padding: '4px 10px',
+                fontSize: '12px',
+                fontWeight: 600,
+                borderRadius: '4px',
+                border: '1px solid #cbd5e1',
+                background: currentPage >= totalPages ? '#f1f5f9' : '#ffffff',
+                cursor: currentPage >= totalPages ? 'not-allowed' : 'pointer'
+              }}
+            >
+              Next ▶
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Modal for adding camera */}

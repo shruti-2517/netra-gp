@@ -44,7 +44,7 @@ class CatalogueService:
             logger.warning(f"Could not reach dynamic catalogue API ({e}). Falling back to local dataset inventory.")
 
         # 3. Fallback to 30-camera local dataset inventory
-        fallback_path = os.path.join("data", "sample_cameras.json")
+        fallback_path = os.path.join("data", "sentinel_live_cameras.json")
         if os.path.exists(fallback_path):
             with open(fallback_path, "r", encoding="utf-8") as f:
                 cameras = json.load(f)

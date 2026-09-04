@@ -123,10 +123,10 @@ def sync_sentinel_live_catalogue(db: Session):
 
         db.commit()
 
-        # Update local sample_cameras.json file
-        json_path = os.path.join("..", "data", "sample_cameras.json")
+        # Update local sentinel_live_cameras.json file
+        json_path = os.path.join("..", "data", "sentinel_live_cameras.json")
         if not os.path.exists(json_path):
-            json_path = os.path.join("data", "sample_cameras.json")
+            json_path = os.path.join("data", "sentinel_live_cameras.json")
         if os.path.exists(os.path.dirname(json_path)):
             with open(json_path, "w", encoding="utf-8") as f:
                 json.dump(sample_list, f, indent=2)

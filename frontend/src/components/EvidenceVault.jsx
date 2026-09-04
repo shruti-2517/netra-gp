@@ -77,7 +77,7 @@ export default function EvidenceVault() {
       });
   };
 
-  const filteredCerts = certificates.filter(c => 
+  const filteredCerts = certificates.filter(c =>
     (c.license_plate || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (c.certificate_id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (c.camera_id || '').toLowerCase().includes(searchTerm.toLowerCase())

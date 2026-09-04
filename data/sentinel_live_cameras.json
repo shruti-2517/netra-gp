@@ -1,122 +1,332 @@
 [
   {
-    "id": "cam01",
-    "name": "01 Chiman bhai Bridge"
+    "camera_id": "cam01",
+    "name": "01 Chiman bhai Bridge",
+    "department": "Police / Traffic",
+    "city": "Ahmedabad",
+    "latitude": 23.0645,
+    "longitude": 72.581,
+    "stream_url": "https://cctv.corp8.cloud/cam01/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam02",
-    "name": "02 Janpath"
+    "camera_id": "cam02",
+    "name": "02 Janpath",
+    "department": "Municipal Corporation",
+    "city": "Ahmedabad",
+    "latitude": 23.0305,
+    "longitude": 72.565,
+    "stream_url": "https://cctv.corp8.cloud/cam02/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam03",
-    "name": "03 O.N.G.C. Office"
+    "camera_id": "cam03",
+    "name": "03 O.N.G.C. Office",
+    "department": "Police / Traffic",
+    "city": "Ahmedabad",
+    "latitude": 23.092,
+    "longitude": 72.593,
+    "stream_url": "https://cctv.corp8.cloud/cam03/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam04",
-    "name": "04 Paldi Circle"
+    "camera_id": "cam04",
+    "name": "04 Paldi Circle",
+    "department": "Police / Traffic",
+    "city": "Ahmedabad",
+    "latitude": 23.0124,
+    "longitude": 72.5625,
+    "stream_url": "https://cctv.corp8.cloud/cam04/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam05",
-    "name": "05 Visat teen Rasta"
+    "camera_id": "cam05",
+    "name": "05 Visat teen Rasta",
+    "department": "RTO Checkpost",
+    "city": "Ahmedabad",
+    "latitude": 23.102,
+    "longitude": 72.591,
+    "stream_url": "https://cctv.corp8.cloud/cam05/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam06",
-    "name": "06 Timbavadi gate-Junagadh"
+    "camera_id": "cam06",
+    "name": "06 Timbavadi gate-Junagadh",
+    "department": "Police / Traffic",
+    "city": "Junagadh",
+    "latitude": 21.512,
+    "longitude": 70.468,
+    "stream_url": "https://cctv.corp8.cloud/cam06/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam07",
-    "name": "07 hero-showroom-gir-somnath"
+    "camera_id": "cam07",
+    "name": "07 hero-showroom-gir-somnath",
+    "department": "Home Department",
+    "city": "Gir Somnath",
+    "latitude": 20.902,
+    "longitude": 70.371,
+    "stream_url": "https://cctv.corp8.cloud/cam07/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam08",
-    "name": "08 majewadi-gate-junagadh"
+    "camera_id": "cam08",
+    "name": "08 majewadi-gate-junagadh",
+    "department": "Municipal Corporation",
+    "city": "Junagadh",
+    "latitude": 21.528,
+    "longitude": 70.459,
+    "stream_url": "https://cctv.corp8.cloud/cam08/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam09",
-    "name": "09 new-bypass-near-by-circle-junagadh-2"
+    "camera_id": "cam09",
+    "name": "09 new-bypass-near-by-circle-junagadh-2",
+    "department": "RTO Checkpost",
+    "city": "Junagadh",
+    "latitude": 21.541,
+    "longitude": 70.472,
+    "stream_url": "https://cctv.corp8.cloud/cam09/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam10",
-    "name": "10 char-chowk-road-2-junagadh"
+    "camera_id": "cam10",
+    "name": "10 char-chowk-road-2-junagadh",
+    "department": "Smart City VMS",
+    "city": "Junagadh",
+    "latitude": 21.519,
+    "longitude": 70.461,
+    "stream_url": "https://cctv.corp8.cloud/cam10/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam11",
-    "name": "11 dolatpara-junagadh"
+    "camera_id": "cam11",
+    "name": "11 dolatpara-junagadh",
+    "department": "Police / Traffic",
+    "city": "Junagadh",
+    "latitude": 21.551,
+    "longitude": 70.469,
+    "stream_url": "https://cctv.corp8.cloud/cam11/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam12",
-    "name": "12 Tri Mandir Adalaj Tollnaka"
+    "camera_id": "cam12",
+    "name": "12 Tri Mandir Adalaj Tollnaka",
+    "department": "RTO Checkpost",
+    "city": "Gandhinagar",
+    "latitude": 23.168,
+    "longitude": 72.581,
+    "stream_url": "https://cctv.corp8.cloud/cam12/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam13",
-    "name": "13 CN Vidhyalaya"
+    "camera_id": "cam13",
+    "name": "13 CN Vidhyalaya",
+    "department": "Municipal Corporation",
+    "city": "Ahmedabad",
+    "latitude": 23.028,
+    "longitude": 72.548,
+    "stream_url": "https://cctv.corp8.cloud/cam13/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam14",
-    "name": "14 Delight RLVD"
+    "camera_id": "cam14",
+    "name": "14 Delight RLVD",
+    "department": "Police / Traffic",
+    "city": "Ahmedabad",
+    "latitude": 23.038,
+    "longitude": 72.552,
+    "stream_url": "https://cctv.corp8.cloud/cam14/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam15",
-    "name": "15 Suvidha park"
+    "camera_id": "cam15",
+    "name": "15 Suvidha park",
+    "department": "Smart City VMS",
+    "city": "Ahmedabad",
+    "latitude": 23.019,
+    "longitude": 72.539,
+    "stream_url": "https://cctv.corp8.cloud/cam15/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam16",
-    "name": "16 Visat P2"
+    "camera_id": "cam16",
+    "name": "16 Visat P2",
+    "department": "Police / Traffic",
+    "city": "Ahmedabad",
+    "latitude": 23.104,
+    "longitude": 72.5925,
+    "stream_url": "https://cctv.corp8.cloud/cam16/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam17",
-    "name": "17 Rajkot Bus Port CCTV"
+    "camera_id": "cam17",
+    "name": "17 Rajkot Bus Port CCTV",
+    "department": "Transport Dept",
+    "city": "Rajkot",
+    "latitude": 22.301,
+    "longitude": 70.801,
+    "stream_url": "https://cctv.corp8.cloud/cam17/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam18",
-    "name": "18 Rajkot CCTV"
+    "camera_id": "cam18",
+    "name": "18 Rajkot CCTV",
+    "department": "Police / Traffic",
+    "city": "Rajkot",
+    "latitude": 22.305,
+    "longitude": 70.798,
+    "stream_url": "https://cctv.corp8.cloud/cam18/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam19",
-    "name": "19 KHAPARIA GRAM PANCHAYAT , TALUKA GANDEVI, DISTRICT NAVSARI"
+    "camera_id": "cam19",
+    "name": "19 KHAPARIA GRAM PANCHAYAT , TALUKA GANDEVI, DISTRICT NAVSARI",
+    "department": "Home Department",
+    "city": "Navsari",
+    "latitude": 20.841,
+    "longitude": 72.981,
+    "stream_url": "https://cctv.corp8.cloud/cam19/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam20",
-    "name": "20 Mohanpura"
+    "camera_id": "cam20",
+    "name": "20 Mohanpura",
+    "department": "Smart City VMS",
+    "city": "Gandhinagar",
+    "latitude": 23.238,
+    "longitude": 72.645,
+    "stream_url": "https://cctv.corp8.cloud/cam20/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam21",
-    "name": "23 Patan Dethali Char Rasta"
+    "camera_id": "cam21",
+    "name": "23 Patan Dethali Char Rasta",
+    "department": "RTO Checkpost",
+    "city": "Patan",
+    "latitude": 23.851,
+    "longitude": 72.128,
+    "stream_url": "https://cctv.corp8.cloud/cam21/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam22",
-    "name": "28 BK Mervada tran Rasta"
+    "camera_id": "cam22",
+    "name": "28 BK Mervada tran Rasta",
+    "department": "Police / Traffic",
+    "city": "Banaskantha",
+    "latitude": 24.172,
+    "longitude": 72.438,
+    "stream_url": "https://cctv.corp8.cloud/cam22/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam23",
-    "name": "30 kheram"
+    "camera_id": "cam23",
+    "name": "30 kheram",
+    "department": "Home Department",
+    "city": "Gujarat Corridor",
+    "latitude": 22.451,
+    "longitude": 71.821,
+    "stream_url": "https://cctv.corp8.cloud/cam23/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam24",
-    "name": "33 dehgam"
+    "camera_id": "cam24",
+    "name": "33 dehgam",
+    "department": "Municipal Corporation",
+    "city": "Gandhinagar",
+    "latitude": 23.168,
+    "longitude": 72.812,
+    "stream_url": "https://cctv.corp8.cloud/cam24/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam25",
-    "name": "34 dhanori"
+    "camera_id": "cam25",
+    "name": "34 dhanori",
+    "department": "RTO Checkpost",
+    "city": "Navsari",
+    "latitude": 20.891,
+    "longitude": 72.951,
+    "stream_url": "https://cctv.corp8.cloud/cam25/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam26",
-    "name": "35 TANKAL"
+    "camera_id": "cam26",
+    "name": "35 TANKAL",
+    "department": "Police / Traffic",
+    "city": "Navsari",
+    "latitude": 20.781,
+    "longitude": 73.012,
+    "stream_url": "https://cctv.corp8.cloud/cam26/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam27",
-    "name": "36 bilimora"
+    "camera_id": "cam27",
+    "name": "36 bilimora",
+    "department": "Municipal Corporation",
+    "city": "Navsari",
+    "latitude": 20.761,
+    "longitude": 72.968,
+    "stream_url": "https://cctv.corp8.cloud/cam27/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam28",
-    "name": "37 bilimora"
+    "camera_id": "cam28",
+    "name": "37 bilimora",
+    "department": "Smart City VMS",
+    "city": "Navsari",
+    "latitude": 20.764,
+    "longitude": 72.971,
+    "stream_url": "https://cctv.corp8.cloud/cam28/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam29",
-    "name": "38 bilimora"
+    "camera_id": "cam29",
+    "name": "38 bilimora",
+    "department": "Police / Traffic",
+    "city": "Navsari",
+    "latitude": 20.768,
+    "longitude": 72.975,
+    "stream_url": "https://cctv.corp8.cloud/cam29/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   },
   {
-    "id": "cam30",
-    "name": "Gandhidham Rambaugh p2"
+    "camera_id": "cam30",
+    "name": "Gandhidham Rambaugh p2",
+    "department": "Police / Traffic",
+    "city": "Kutch",
+    "latitude": 23.078,
+    "longitude": 70.134,
+    "stream_url": "https://cctv.corp8.cloud/cam30/index.m3u8",
+    "type": "Sentinel Live Camera",
+    "status": "ACTIVE"
   }
 ]

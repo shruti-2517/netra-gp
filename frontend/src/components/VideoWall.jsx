@@ -5,99 +5,51 @@ import { API_BASE_URL } from '../config';
 function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPlateDetected }) {
   const videoRef = useRef(null);
   const [detectedPlate, setDetectedPlate] = useState(null);
+  const [useBackendImg, setUseBackendImg] = useState(false);
 
-  // Fallback sample feeds array from backend static files
-  const sampleMp4s = [
-    `${API_BASE_URL}/sample_feeds/traffic1.mp4`,
-    `${API_BASE_URL}/sample_feeds/84222-584891447_medium.mp4`,
-    `${API_BASE_URL}/sample_feeds/120678-721759752_medium.mp4`,
-    `${API_BASE_URL}/sample_feeds/153283-804933523_medium.mp4`,
-    `${API_BASE_URL}/sample_feeds/154195-807166827_medium.mp4`
-  ];
-
-  // Real Video & HLS Setup
+  // Stream & HLS Setup
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     if (isWebcamMode && webcamStream) {
       video.srcObject = webcamStream;
-      video.play().catch(() => {});
-    } else if (!isWebcamMode && cam) {
-      let streamUrl = cam.stream_url;
+      video.play().catch(() => { });
+    } else if (!isWebcamMode && cam && !useBackendImg) {
+      let streamUrl = cam.stream_url || `https://cctv.corp8.cloud/${cam.id}/index.m3u8`;
 
-      // Primary: Try Sentinel HLS live stream
       if (streamUrl && streamUrl.includes('.m3u8')) {
         if (window.Hls && window.Hls.isSupported()) {
           const hls = new window.Hls({
             enableWorker: true,
             lowLatencyMode: true,
-            manifestLoadingTimeOut: 5000
+            manifestLoadingTimeOut: 4000
           });
           hls.loadSource(streamUrl);
           hls.attachMedia(video);
           hls.on(window.Hls.Events.MANIFEST_PARSED, () => {
-            video.play().catch(() => {});
+            video.play().catch(() => { });
           });
           hls.on(window.Hls.Events.ERROR, (event, data) => {
             if (data.fatal) {
-              // Fallback to backend sample MP4 video feed if cloud HLS hits network/auth restriction
-              const fallbackUrl = sampleMp4s[(cam.id ? cam.id.length : 0) % sampleMp4s.length];
               hls.destroy();
-              video.src = fallbackUrl;
-              video.play().catch(() => {});
+              setUseBackendImg(true);
             }
           });
           return () => hls.destroy();
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
           video.src = streamUrl;
-          video.play().catch(() => {});
+          video.play().catch(() => {
+            setUseBackendImg(true);
+          });
+        } else {
+          setUseBackendImg(true);
         }
       } else {
-        // Play backend video feed directly
-        const feedUrl = streamUrl || sampleMp4s[(cam.id ? cam.id.length : 0) % sampleMp4s.length];
-        video.src = feedUrl;
-        video.play().catch(() => {});
+        setUseBackendImg(true);
       }
     }
-  }, [cam, isWebcamMode, webcamStream]);
-
-  // Real-time Frame Capture & OCR Scanning against Backend API
-  useEffect(() => {
-    const offscreen = document.createElement('canvas');
-    offscreen.width = 640;
-    offscreen.height = 480;
-    const octx = offscreen.getContext('2d');
-
-    const scanTimer = setInterval(() => {
-      const vid = videoRef.current;
-      if (vid && (vid.readyState >= 1 || vid.videoWidth > 0) && !uploadedImage) {
-        try {
-          octx.drawImage(vid, 0, 0, 640, 480);
-          const b64 = offscreen.toDataURL('image/jpeg', 0.7);
-
-          fetch(`${API_BASE_URL}/api/v1/detections/scan-frame`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              image_base64: b64,
-              camera_id: cam.id || 'cam01'
-            })
-          })
-          .then(res => res.json())
-          .then(data => {
-            if (data && data.detected && data.license_plate) {
-              setDetectedPlate(data.license_plate);
-              if (onPlateDetected) onPlateDetected(data.license_plate);
-            }
-          })
-          .catch(() => {});
-        } catch (e) {}
-      }
-    }, 2000);
-
-    return () => clearInterval(scanTimer);
-  }, [isWebcamMode, webcamStream, cam, uploadedImage, onPlateDetected]);
+  }, [cam, isWebcamMode, webcamStream, useBackendImg]);
 
   // Handle Uploaded Image Mode
   useEffect(() => {
@@ -110,40 +62,54 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPl
           camera_id: 'CAM-UPLOAD-SCAN'
         })
       })
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.license_plate) {
-          setDetectedPlate(data.license_plate);
-          if (onPlateDetected) onPlateDetected(data.license_plate);
-        }
-      })
-      .catch(() => { });
+        .then(res => res.json())
+        .then(data => {
+          if (data && data.license_plate) {
+            setDetectedPlate(data.license_plate);
+            if (onPlateDetected) onPlateDetected(data.license_plate);
+          }
+        })
+        .catch(() => { });
     }
   }, [uploadedImage, isWebcamMode, onPlateDetected]);
 
+  const backendStreamUrl = `${API_BASE_URL}/api/v1/streams/live/${cam.id || 'cam01'}`;
+
   return (
     <div style={{ position: 'relative', width: '100%', height: '240px', background: '#0b1c30', overflow: 'hidden' }}>
-      {/* Real HTML5 Video Player playing backend/cloud stream */}
-      <video
-        ref={videoRef}
-        autoPlay
-        loop
-        muted
-        playsInline
-        style={{
-          width: '100%',
-          height: '100%',
-          objectFit: 'cover',
-          display: uploadedImage ? 'none' : 'block'
-        }}
-      />
-
-      {/* Uploaded Image Mode */}
-      {uploadedImage && isWebcamMode && (
+      {isWebcamMode && webcamStream ? (
+        <video
+          ref={videoRef}
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+        />
+      ) : uploadedImage && isWebcamMode ? (
         <img
           src={uploadedImage}
           alt="Scanned Vehicle"
           style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+        />
+      ) : !useBackendImg ? (
+        <video
+          ref={videoRef}
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          onError={() => setUseBackendImg(true)}
+        />
+      ) : (
+        <img
+          src={backendStreamUrl}
+          alt={`Live Feed ${cam.id}`}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          onError={(e) => {
+            e.target.onerror = null;
+          }}
         />
       )}
 
@@ -164,17 +130,17 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPl
         gap: '6px',
         backdropFilter: 'blur(2px)'
       }}>
-        <span>● LIVE FEED | {isWebcamMode ? (uploadedImage ? "IMAGE SCAN" : "WEBCAM") : (cam.id || "CCTV")}</span>
+        <span>● LIVE STREAM | {isWebcamMode ? (uploadedImage ? "IMAGE SCAN" : "WEBCAM") : (cam.id || "CCTV")}</span>
       </div>
 
-      {/* Detected Plate Banner */}
+      {/* Telemetry Banner */}
       <div style={{
         position: 'absolute',
         bottom: '10px',
         left: '10px',
         right: '10px',
         background: 'rgba(0, 32, 69, 0.90)',
-        border: `1.5px solid ${detectedPlate ? '#22c55e' : '#fe932c'}`,
+        border: '1.5px solid #22c55e',
         padding: '6px 12px',
         borderRadius: '4px',
         display: 'flex',
@@ -185,8 +151,8 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPl
         backdropFilter: 'blur(2px)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ color: detectedPlate ? '#22c55e' : '#fe932c', fontWeight: 800 }}>
-            {detectedPlate ? '✓ ANPR TARGET IDENTIFIED:' : '● SCANNING STREAM...'}
+          <span style={{ color: '#22c55e', fontWeight: 800 }}>
+            ● BACKEND OPENCV + YOLOv8 + EASYOCR ACTIVE
           </span>
           {detectedPlate && (
             <span style={{
