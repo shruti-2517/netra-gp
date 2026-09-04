@@ -18,9 +18,21 @@ class CatalogueService:
 
     def fetch_catalogue(self):
         """
-        Fetches live camera inventory from catalogue API contract.
-        Returns list of cameras with id, location, codec, live status, and endpoints (RTSP, WebRTC/WHEP, HLS).
+        Fetches live camera inventory from dynamic API contract or Sentinel CDN catalogue (https://cctv.corp8.cloud/cameras.json).
+        Returns list of 30 cameras with id, location, codec, live status, and endpoints (RTSP, WebRTC/WHEP, HLS).
         """
+        # 1. Primary Attempt: Sentinel CDN Catalogue
+        sentinel_url = "https://cctv.corp8.cloud/cameras.json"
+        try:
+            resp = requests.get(sentinel_url, timeout=3.0)
+            if resp.status_code == 200 and len(resp.json()) > 0:
+                cameras = resp.json()
+                logger.info(f"Successfully retrieved {len(cameras)} cameras from Sentinel CDN catalogue.")
+                return cameras
+        except Exception:
+            pass
+
+        # 2. Secondary Attempt: Local API Ingestion
         logger.info(f"Fetching dynamic camera catalogue from: {self.ingest_url}")
         try:
             resp = requests.get(self.ingest_url, timeout=3.0)
@@ -31,7 +43,7 @@ class CatalogueService:
         except Exception as e:
             logger.warning(f"Could not reach dynamic catalogue API ({e}). Falling back to local dataset inventory.")
 
-        # Fallback to local sample dataset if remote ingest is unreachable
+        # 3. Fallback to 30-camera local dataset inventory
         fallback_path = os.path.join("data", "sample_cameras.json")
         if os.path.exists(fallback_path):
             with open(fallback_path, "r", encoding="utf-8") as f:
