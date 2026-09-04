@@ -8,13 +8,16 @@
 ## 📌 Project Overview
 This repository contains a working prototype of an integrated video management and automated license plate recognition (ANPR) platform. It addresses the challenge of unifying 26 independent, siloed CCTV ecosystems (~80,000 cameras across Gujarat) into a single operational interface.
 
-### Key Architecture: Model 1 + Model 2 Hybrid
+### Key Architecture
 - **Model 1 (Registry & GIS Map)**: Centralized database of camera metadata with interactive GIS spatial mapping (PostGIS + Leaflet).
 - **Model 2 (Unified Viewing & ANPR Analytics)**: Real-time live RTSP stream ingestion, license plate detection (YOLOv8), multi-pass OCR (EasyOCR + CLAHE + Otsu), watchlist correlation, and Section 63 BSA 2023 digital evidence certificate vault.
+- **Model 4 (Distributed Microservices)**: Fully containerized architecture orchestrated via Docker Compose, bridging PostgreSQL, Kafka, MinIO, and scalable standalone CV workers.
+- **Decoupled Analytics via Kafka**: Stream ingestion and ANPR workloads are decoupled using a pub/sub event-driven architecture (`netra.streams.ingest`), enabling horizontal scaling of YOLOv8/EasyOCR pipelines.
+- **Resilient Cloud Storage (S3/MinIO)**: Violation evidence clips and BSA 2023 compliant certificates are persisted securely via S3-compatible resilient object storage.
+- **Role-Based Access Control (RBAC)**: Secure multi-tenant access utilizing JWT authentication with strict, cryptographically enforced department-level camera isolation.
 - **PTS-Based Timing & Motion Engine**: Driven strictly by Presentation Timestamps (`CAP_PROP_POS_MSEC`), eliminating initial GOP replay velocity spikes and handling variable frame rates.
 - **Resilient Stream Ingestion**: Supervised RTSP reader with automatic reconnection and exponential backoff (2s to 30s cap).
 - **100% Genuine Live Feed Telemetry & Reports**: Validation reports (`data/reports/`) built from genuine live Sentinel RTSP feeds (`rtsp://103.250.160.189:8554/stream/{camera_id}`) with zero synthetic fallbacks.
-- **Model 4 (Scalability Roadmap)**: Architectural roadmap in HLD detailing expansion to ~80,000 cameras statewide.
 
 ---
 
