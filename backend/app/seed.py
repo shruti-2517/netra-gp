@@ -5,10 +5,12 @@ import hashlib
 import datetime
 import logging
 from sqlalchemy.orm import Session
-from app.models import Camera, WatchlistVehicle, DetectionEvent, Alert, EvidenceCertificate
+from app.models import Camera, WatchlistVehicle, DetectionEvent, Alert, EvidenceCertificate, Department, Role, User
 from app.services.sentinel_sync import sync_sentinel_live_catalogue
+from passlib.context import CryptContext
 
 logger = logging.getLogger("SeedData")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def seed_initial_data(db: Session):
     """
@@ -76,3 +78,30 @@ def seed_initial_data(db: Session):
     # 3. Detection Events, Alerts, & BSA 2023 Evidence Certificates are generated directly from live video feed evaluations.
     logger.info("Database seeding completed. Live feed evaluation ready.")
 
+    # 4. Seed Auth (Roles, Departments, Superadmin)
+    if db.query(Role).count() == 0:
+        admin_role = Role(name="Superadmin")
+        viewer_role = Role(name="Viewer")
+        db.add_all([admin_role, viewer_role])
+        db.commit()
+        
+    if db.query(Department).count() == 0:
+        hq_dept = Department(name="HQ Traffic Police", description="Headquarters")
+        civil_dept = Department(name="Civil Supplies", description="Food & Civil Supplies")
+        db.add_all([hq_dept, civil_dept])
+        db.commit()
+    
+    if db.query(User).count() == 0:
+        admin_r = db.query(Role).filter(Role.name="Superadmin").first()
+        hq_d = db.query(Department).filter(Department.name=="HQ Traffic Police").first()
+        if admin_r and hq_d:
+            admin_user = User(
+                username="admin",
+                hashed_password=pwd_context.hash("admin123"),
+                department_id=hq_d.id,
+                role_id=admin_r.id,
+                is_active=True
+            )
+            db.add(admin_user)
+            db.commit()
+            logger.info("Seeded initial Superadmin user and Auth tables.")
