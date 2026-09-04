@@ -101,8 +101,15 @@ export default function AlertFeed({ onWsStatusChange }) {
   }, [isSoundEnabled]);
 
   const handleClearAlerts = () => {
-    setAlerts([]);
-    fetch('http://localhost:8000/api/v1/alerts', { method: 'DELETE' }).catch(() => {});
+    fetch('http://localhost:8000/api/v1/alerts', { method: 'DELETE' })
+      .then(res => res.json())
+      .then(() => {
+        setAlerts([]);
+        setNewAlertToast(null);
+      })
+      .catch(() => {
+        setAlerts([]);
+      });
   };
 
   // Client-side filtering
