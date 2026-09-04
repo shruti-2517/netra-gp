@@ -17,6 +17,7 @@ from app.services.matcher import WatchlistMatcher
 from app.services.speed_calculator import SpeedCalculator
 from app.services.interception_predictor import InterceptionPredictor
 from app.services.websocket_manager import manager
+from app.services.s3_storage import upload_bytes_to_s3
 
 logger = logging.getLogger("DetectionsRouter")
 
@@ -156,6 +157,10 @@ async def ingest_detection(detection_in: DetectionEventCreate, db: Session = Dep
                 "timestamp": alert.timestamp
             })
 
+            # Upload evidence artifact to S3
+            evidence_json = f'{{"alert_id":"{alert.alert_id}","plate":"{detection_in.license_plate}","hash":"{evidence_hash}"}}'.encode("utf-8")
+            upload_bytes_to_s3(evidence_json, f"evidence/{alert.alert_id}.json", content_type="application/json")
+
     return event
 
 @router.post("/detections/scan-frame")
@@ -271,6 +276,10 @@ async def scan_live_frame(req: FrameScanRequest, db: Session = Depends(get_db)):
                 "city": city_name,
                 "timestamp": now_iso
             })
+
+            # Upload webcam evidence snapshot to S3
+            s3_key = f"snapshots/{alert_id}.jpg"
+            upload_bytes_to_s3(img_bytes, s3_key, content_type="image/jpeg")
 
             return {
                 "detected": True,
