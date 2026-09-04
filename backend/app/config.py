@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     S3_SECRET_KEY: str = os.getenv("S3_SECRET_KEY", "minioadmin")
     S3_BUCKET_NAME: str = os.getenv("S3_BUCKET_NAME", "netra-gp-media")
 
+    # Kafka Message Broker
+    KAFKA_BOOTSTRAP_SERVERS: str = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
+    KAFKA_TOPIC_STREAMS: str = os.getenv("KAFKA_TOPIC_STREAMS", "netra.streams.ingest")
+    KAFKA_TOPIC_DETECTIONS: str = os.getenv("KAFKA_TOPIC_DETECTIONS", "netra.detections.results")
+
     class Config:
         case_sensitive = True
 
