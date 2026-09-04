@@ -92,7 +92,7 @@ def seed_initial_data(db: Session):
         db.commit()
     
     if db.query(User).count() == 0:
-        admin_r = db.query(Role).filter(Role.name="Superadmin").first()
+        admin_r = db.query(Role).filter(Role.name=="Superadmin").first()
         hq_d = db.query(Department).filter(Department.name=="HQ Traffic Police").first()
         if admin_r and hq_d:
             admin_user = User(

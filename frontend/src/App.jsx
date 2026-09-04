@@ -11,11 +11,16 @@ import RouteTracker from './components/RouteTracker';
 import EvidenceVault from './components/EvidenceVault';
 import AlertFeed from './components/AlertFeed';
 import { ShieldAlert, Lock, ArrowLeft } from 'lucide-react';
+import Login from './components/Login';
 
 function DashboardContent() {
   const [activeTab, setActiveTab] = useState('map');
   const [wsConnected, setWsConnected] = useState(true);
-  const { isTabAllowed, currentRole } = useAuth();
+  const { isTabAllowed, currentRole, isLoggedIn } = useAuth();
+
+  if (!isLoggedIn) {
+    return <Login />;
+  }
 
   // Route Access Check
   const hasAccess = isTabAllowed(activeTab);

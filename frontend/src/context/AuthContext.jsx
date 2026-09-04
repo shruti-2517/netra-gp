@@ -66,6 +66,7 @@ export const ROLES = {
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentRole, setCurrentRole] = useState(ROLES.SUPER_ADMIN);
   const [user, setUser] = useState({
     name: 'Inspector V. Jadeja',
@@ -83,8 +84,22 @@ export function AuthProvider({ children }) {
     return currentRole.allowedTabs.includes(tabKey);
   };
 
+  const login = (roleKey, userData) => {
+    if (ROLES[roleKey]) {
+      setCurrentRole(ROLES[roleKey]);
+    }
+    if (userData) {
+      setUser(userData);
+    }
+    setIsLoggedIn(true);
+  };
+
+  const logout = () => {
+    setIsLoggedIn(false);
+  };
+
   return (
-    <AuthContext.Provider value={{ currentRole, user, switchRole, isTabAllowed, ROLES }}>
+    <AuthContext.Provider value={{ isLoggedIn, login, logout, currentRole, user, switchRole, isTabAllowed, ROLES }}>
       {children}
     </AuthContext.Provider>
   );
