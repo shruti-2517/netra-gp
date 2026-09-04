@@ -64,11 +64,15 @@ flowchart TD
 - **Spatial Indexing**: PostGIS `GEOMETRY(Point, 4326)` for rapid spatial queries (e.g., find all cameras within 5 km of an incident site).
 - **Metadata Fields**: Camera ID, Department Owner, Geo-coordinates, RTSP/HTTP Stream URI, Operational Status, Resolution, VMS Vendor Type.
 
-### 3.2 ANPR Analytics Pipeline
-- **Vehicle & Plate Detection**: YOLOv8 pre-trained model cropped to license plate regions of interest (ROI).
-- **Text Recognition**: EasyOCR with preprocessing filters (grayscale conversion, adaptive thresholding, bilateral filtering).
-- **Format Normalization**: Regex parser converting plate variants to standard Indian syntax (`GJ-01-AB-1234`).
-- **Timing Engine**: Driven strictly by Presentation Timestamps (`pts_ms`), ensuring zero reliance on arrival wall-clock or frame rate assumptions.
+### 3.2 ANPR Analytics Pipeline & Stream Resiliency
+- **Vehicle & Plate Detection**: YOLOv8 model cropped to license plate regions of interest (ROI) and vehicle bounding boxes.
+- **Text Recognition & Multi-Pass OCR**: EasyOCR engine with adaptive CLAHE contrast enhancement, Otsu inverted binary thresholding, and canonical Indian plate normalizers.
+- **PTS-Based Motion & Speed Timing Engine**:
+  - All frame timing and velocity estimations are driven strictly by **Presentation Timestamps (PTS)** via `CAP_PROP_POS_MSEC` / RTP header timestamps, **NEVER** arrival wall-clock time (`time.time()`).
+  - **GOP Replay Burst Protection**: Mitigates gateway Group-Of-Pictures (GOP) replay dumps on client connection, preventing impossible velocity spikes caused by keyframe burst delivery.
+  - **Variable Frame Rate & Gap Tolerance**: Does not assume fixed frame rates (e.g. 30 FPS); motion models operate directly on actual inter-frame PTS deltas ($\Delta \text{PTS} = (t_2 - t_1) / 1000.0$ s).
+- **Supervised Reconnection with Exponential Backoff**:
+  - Supervised RTSP stream reader detects disconnects or network interruptions and automatically reconnects using exponential backoff (initial delay 2.0s, doubling up to a maximum cap of 30.0s). Never polls or reconnects in a tight loop.
 
 ### 3.3 Real-Time Watchlist Correlation Engine
 - Cross-references incoming plate reads against a high-speed in-memory cache and PostgreSQL watchlist database.

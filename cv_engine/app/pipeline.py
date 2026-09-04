@@ -23,7 +23,7 @@ class ANPRPipeline:
         reader = VideoStreamReader(source=source, frame_sample_rate=sample_rate)
         logger.info(f"Pipeline started for Camera [{camera_id}] on source: {source}")
         
-        for frame_num, pts_ms, timestamp, frame in reader.read_frames():
+        for frame_num, pts_ms, delta_pts_ms, timestamp, frame in reader.read_frames():
             detections = self.detector.detect_plates(frame)
             
             for det in detections:

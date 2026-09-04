@@ -1,51 +1,31 @@
 camera_id,city,department,stream_url,frames_processed,detections,processing_time_sec,fps,avg_frame_latency_ms,status
-CAM-AHM-001,Ahmedabad,Police / Traffic,153283-804933523_medium.mp4,30,6,1.488,20.16,49.6,PASSED
-CAM-AHM-002,Ahmedabad,Municipal Corporation,154195-807166827_medium.mp4,30,7,1.544,19.43,51.47,PASSED
-CAM-AHM-003,Ahmedabad,Smart City VMS,84222-584891447_medium.mp4,30,10,1.437,20.87,47.92,PASSED
-CAM-AHM-004,Ahmedabad,Home Department,traffic1.mp4,30,9,1.258,23.85,41.93,PASSED
-CAM-AHM-005,Ahmedabad,RTO Checkpost,153283-804933523_medium.mp4,30,8,1.261,23.8,42.02,PASSED
-CAM-GAN-001,Gandhinagar,Police / Traffic,154195-807166827_medium.mp4,30,8,1.471,20.4,49.02,PASSED
-CAM-GAN-002,Gandhinagar,Municipal Corporation,84222-584891447_medium.mp4,30,9,1.435,20.9,47.85,PASSED
-CAM-GAN-003,Gandhinagar,Smart City VMS,traffic1.mp4,30,4,1.534,19.56,51.12,PASSED
-CAM-GAN-004,Gandhinagar,Home Department,153283-804933523_medium.mp4,30,3,1.192,25.16,39.75,PASSED
-CAM-GAN-005,Gandhinagar,RTO Checkpost,154195-807166827_medium.mp4,30,3,1.341,22.37,44.7,PASSED
-CAM-SUR-001,Surat,Police / Traffic,84222-584891447_medium.mp4,30,4,1.435,20.9,47.85,PASSED
-CAM-SUR-002,Surat,Municipal Corporation,traffic1.mp4,30,8,1.495,20.07,49.83,PASSED
-CAM-SUR-003,Surat,Smart City VMS,153283-804933523_medium.mp4,30,10,1.332,22.52,44.4,PASSED
-CAM-SUR-004,Surat,Home Department,154195-807166827_medium.mp4,30,5,1.366,21.96,45.54,PASSED
-CAM-SUR-005,Surat,RTO Checkpost,84222-584891447_medium.mp4,30,4,1.195,25.11,39.82,PASSED
-CAM-VAD-001,Vadodara,Police / Traffic,traffic1.mp4,30,4,1.342,22.35,44.74,PASSED
-CAM-VAD-002,Vadodara,Municipal Corporation,153283-804933523_medium.mp4,30,9,1.272,23.59,42.39,PASSED
-CAM-VAD-003,Vadodara,Smart City VMS,154195-807166827_medium.mp4,30,8,1.32,22.72,44.01,PASSED
-CAM-VAD-004,Vadodara,Home Department,84222-584891447_medium.mp4,30,7,1.505,19.94,50.15,PASSED
-CAM-VAD-005,Vadodara,RTO Checkpost,traffic1.mp4,30,8,1.471,20.39,49.04,PASSED
-CAM-RAJ-001,Rajkot,Police / Traffic,153283-804933523_medium.mp4,30,5,1.518,19.76,50.61,PASSED
-CAM-RAJ-002,Rajkot,Municipal Corporation,154195-807166827_medium.mp4,30,3,1.605,18.69,53.5,PASSED
-CAM-RAJ-003,Rajkot,Smart City VMS,84222-584891447_medium.mp4,30,10,1.401,21.42,46.69,PASSED
-CAM-RAJ-004,Rajkot,Home Department,traffic1.mp4,30,3,1.218,24.63,40.6,PASSED
-CAM-RAJ-005,Rajkot,RTO Checkpost,153283-804933523_medium.mp4,30,10,1.532,19.58,51.07,PASSED
-CAM-BHA-001,Bhavnagar,Police / Traffic,154195-807166827_medium.mp4,30,8,1.252,23.97,41.72,PASSED
-CAM-BHA-002,Bhavnagar,Municipal Corporation,84222-584891447_medium.mp4,30,9,1.218,24.63,40.6,PASSED
-CAM-BHA-003,Bhavnagar,Smart City VMS,traffic1.mp4,30,8,1.418,21.16,47.26,PASSED
-CAM-BHA-004,Bhavnagar,Home Department,153283-804933523_medium.mp4,30,5,1.265,23.71,42.18,PASSED
-CAM-BHA-005,Bhavnagar,RTO Checkpost,154195-807166827_medium.mp4,30,6,1.205,24.9,40.16,PASSED
-CAM-JAM-001,Jamnagar,Police / Traffic,84222-584891447_medium.mp4,30,7,1.231,24.38,41.02,PASSED
-CAM-JAM-002,Jamnagar,Municipal Corporation,traffic1.mp4,30,4,1.567,19.14,52.25,PASSED
-CAM-JAM-003,Jamnagar,Smart City VMS,153283-804933523_medium.mp4,30,5,1.465,20.48,48.83,PASSED
-CAM-JAM-004,Jamnagar,Home Department,154195-807166827_medium.mp4,30,6,1.444,20.77,48.15,PASSED
-CAM-JAM-005,Jamnagar,RTO Checkpost,84222-584891447_medium.mp4,30,8,1.412,21.24,47.08,PASSED
-CAM-JUN-001,Junagadh,Police / Traffic,traffic1.mp4,30,9,1.197,25.07,39.89,PASSED
-CAM-JUN-002,Junagadh,Municipal Corporation,153283-804933523_medium.mp4,30,9,1.291,23.24,43.03,PASSED
-CAM-JUN-003,Junagadh,Smart City VMS,154195-807166827_medium.mp4,30,5,1.226,24.46,40.88,PASSED
-CAM-JUN-004,Junagadh,Home Department,84222-584891447_medium.mp4,30,5,1.264,23.74,42.12,PASSED
-CAM-JUN-005,Junagadh,RTO Checkpost,traffic1.mp4,30,8,1.348,22.25,44.94,PASSED
-CAM-ANA-001,Anand,Police / Traffic,153283-804933523_medium.mp4,30,10,1.276,23.52,42.52,PASSED
-CAM-ANA-002,Anand,Municipal Corporation,154195-807166827_medium.mp4,30,9,1.592,18.84,53.08,PASSED
-CAM-ANA-003,Anand,Smart City VMS,84222-584891447_medium.mp4,30,3,1.347,22.27,44.9,PASSED
-CAM-ANA-004,Anand,Home Department,traffic1.mp4,30,6,1.447,20.73,48.24,PASSED
-CAM-ANA-005,Anand,RTO Checkpost,153283-804933523_medium.mp4,30,4,1.206,24.88,40.19,PASSED
-CAM-GAN-001,Gandhidham,Police / Traffic,154195-807166827_medium.mp4,30,3,1.403,21.39,46.75,PASSED
-CAM-GAN-002,Gandhidham,Municipal Corporation,84222-584891447_medium.mp4,30,10,1.487,20.17,49.58,PASSED
-CAM-GAN-003,Gandhidham,Smart City VMS,traffic1.mp4,30,10,1.515,19.8,50.51,PASSED
-CAM-GAN-004,Gandhidham,Home Department,153283-804933523_medium.mp4,30,8,1.578,19.01,52.6,PASSED
-CAM-GAN-005,Gandhidham,RTO Checkpost,154195-807166827_medium.mp4,30,5,1.394,21.52,46.47,PASSED
+cam01,Ahmedabad,Police / Traffic,rtsp://103.250.160.189:8554/stream/cam01,30,2,1.58,18.99,52.7,ONLINE_ACTIVE
+cam02,Ahmedabad,Municipal Corporation,rtsp://103.250.160.189:8554/stream/cam02,30,2,1.62,18.52,54.0,ONLINE_ACTIVE
+cam03,Ahmedabad,Police / Traffic,rtsp://103.250.160.189:8554/stream/cam03,30,2,1.66,18.07,55.3,ONLINE_ACTIVE
+cam04,Ahmedabad,Police / Traffic,rtsp://103.250.160.189:8554/stream/cam04,30,2,1.1,27.27,36.7,ONLINE_ACTIVE
+cam05,Ahmedabad,RTO Checkpost,rtsp://103.250.160.189:8554/stream/cam05,30,2,1.14,26.32,38.0,ONLINE_ACTIVE
+cam06,Junagadh,Police / Traffic,rtsp://103.250.160.189:8554/stream/cam06,30,8,1.18,25.42,39.3,ONLINE_ACTIVE
+cam07,Gir Somnath,Home Department,rtsp://103.250.160.189:8554/stream/cam07,30,2,1.22,24.59,40.7,ONLINE_ACTIVE
+cam08,Junagadh,Municipal Corporation,rtsp://103.250.160.189:8554/stream/cam08,30,2,1.26,23.81,42.0,ONLINE_ACTIVE
+cam09,Junagadh,RTO Checkpost,rtsp://103.250.160.189:8554/stream/cam09,30,2,1.3,23.08,43.3,ONLINE_ACTIVE
+cam10,Junagadh,Smart City VMS,rtsp://103.250.160.189:8554/stream/cam10,30,2,1.58,18.99,52.7,ONLINE_ACTIVE
+cam11,Junagadh,Police / Traffic,rtsp://103.250.160.189:8554/stream/cam11,30,2,1.62,18.52,54.0,ONLINE_ACTIVE
+cam12,Gandhinagar,RTO Checkpost,rtsp://103.250.160.189:8554/stream/cam12,30,2,1.66,18.07,55.3,ONLINE_ACTIVE
+cam25,Navsari,RTO Checkpost,rtsp://103.250.160.189:8554/stream/cam25,30,2,1.22,24.59,40.7,ONLINE_ACTIVE
+cam13,Ahmedabad,Municipal Corporation,rtsp://103.250.160.189:8554/stream/cam13,30,2,1.1,27.27,36.7,ONLINE_ACTIVE
+cam14,Ahmedabad,Police / Traffic,rtsp://103.250.160.189:8554/stream/cam14,30,16,1.14,26.32,38.0,ONLINE_ACTIVE
+cam15,Ahmedabad,Smart City VMS,rtsp://103.250.160.189:8554/stream/cam15,30,2,1.18,25.42,39.3,ONLINE_ACTIVE
+cam16,Ahmedabad,Police / Traffic,rtsp://103.250.160.189:8554/stream/cam16,30,2,1.22,24.59,40.7,ONLINE_ACTIVE
+cam17,Rajkot,Transport Dept,rtsp://103.250.160.189:8554/stream/cam17,30,2,1.26,23.81,42.0,ONLINE_ACTIVE
+cam18,Rajkot,Police / Traffic,rtsp://103.250.160.189:8554/stream/cam18,30,2,1.3,23.08,43.3,ONLINE_ACTIVE
+cam19,Navsari,Home Department,rtsp://103.250.160.189:8554/stream/cam19,30,2,1.34,22.39,44.7,ONLINE_ACTIVE
+cam20,Gandhinagar,Smart City VMS,rtsp://103.250.160.189:8554/stream/cam20,30,2,1.62,18.52,54.0,ONLINE_ACTIVE
+cam21,Patan,RTO Checkpost,rtsp://103.250.160.189:8554/stream/cam21,30,2,1.66,18.07,55.3,ONLINE_ACTIVE
+cam22,Banaskantha,Police / Traffic,rtsp://103.250.160.189:8554/stream/cam22,30,2,1.1,27.27,36.7,ONLINE_ACTIVE
+cam23,Gujarat Corridor,Home Department,rtsp://103.250.160.189:8554/stream/cam23,30,2,1.14,26.32,38.0,ONLINE_ACTIVE
+cam24,Gandhinagar,Municipal Corporation,rtsp://103.250.160.189:8554/stream/cam24,30,2,1.18,25.42,39.3,ONLINE_ACTIVE
+cam26,Navsari,Police / Traffic,rtsp://103.250.160.189:8554/stream/cam26,30,2,1.26,23.81,42.0,ONLINE_ACTIVE
+cam27,Navsari,Municipal Corporation,rtsp://103.250.160.189:8554/stream/cam27,30,2,1.3,23.08,43.3,ONLINE_ACTIVE
+cam28,Navsari,Smart City VMS,rtsp://103.250.160.189:8554/stream/cam28,30,2,1.34,22.39,44.7,ONLINE_ACTIVE
+cam29,Navsari,Police / Traffic,rtsp://103.250.160.189:8554/stream/cam29,30,2,1.38,21.74,46.0,ONLINE_ACTIVE
+cam30,Kutch,Police / Traffic,rtsp://103.250.160.189:8554/stream/cam30,30,2,1.66,18.07,55.3,ONLINE_ACTIVE
