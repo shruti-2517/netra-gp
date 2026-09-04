@@ -217,39 +217,43 @@ async def scan_live_frame(req: FrameScanRequest, db: Session = Depends(get_db)):
         if len(cleaned) >= 5:
             now_iso = datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
             
-            matched_vehicle, _ = WatchlistMatcher.match_plate(db, cleaned)
+            matched_vehicle, match_conf = WatchlistMatcher.match_plate(db, cleaned)
             is_hit = matched_vehicle is not None
-            threat = matched_vehicle.threat_level if is_hit else "HIGH"
-            reason = matched_vehicle.reason if is_hit else f"Live Surveillance ANPR Hit ({cleaned})"
-
-            alert_id = f"ALT-{int(datetime.datetime.utcnow().timestamp())}"
             
-            # Persist Alert in database
-            db_alert = Alert(
-                alert_id=alert_id,
-                detection_id=None,
-                license_plate=cleaned,
-                threat_level=threat,
-                reason=reason,
-                camera_id=req.camera_id,
-                city="Ahmedabad / Live Webcam",
-                timestamp=now_iso,
-                is_acknowledged=False
-            )
-            db.add(db_alert)
-            db.commit()
+            alert_id = None
+            threat = None
+            
+            if is_hit:
+                threat = matched_vehicle.threat_level
+                reason = matched_vehicle.reason
+                alert_id = f"ALT-{int(datetime.datetime.utcnow().timestamp())}"
+                
+                # Persist Alert in database strictly for actual Watchlist matches
+                db_alert = Alert(
+                    alert_id=alert_id,
+                    detection_id=None,
+                    license_plate=cleaned,
+                    threat_level=threat,
+                    reason=reason,
+                    camera_id=req.camera_id,
+                    city="Ahmedabad / Live Webcam",
+                    timestamp=now_iso,
+                    is_acknowledged=False
+                )
+                db.add(db_alert)
+                db.commit()
 
-            # Broadcast live alert to all frontend clients
-            await manager.broadcast({
-                "event": "WATCHLIST_ALERT",
-                "alert_id": alert_id,
-                "license_plate": cleaned,
-                "threat_level": threat,
-                "reason": reason,
-                "camera_id": req.camera_id,
-                "city": "Ahmedabad / Live Webcam",
-                "timestamp": now_iso
-            })
+                # Broadcast live alert to all frontend clients strictly on watchlist hit
+                await manager.broadcast({
+                    "event": "WATCHLIST_ALERT",
+                    "alert_id": alert_id,
+                    "license_plate": cleaned,
+                    "threat_level": threat,
+                    "reason": reason,
+                    "camera_id": req.camera_id,
+                    "city": "Ahmedabad / Live Webcam",
+                    "timestamp": now_iso
+                })
 
             return {
                 "detected": True,
