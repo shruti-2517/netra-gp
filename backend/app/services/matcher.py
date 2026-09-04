@@ -65,18 +65,22 @@ class WatchlistMatcher:
                 return entry, 0.95
 
         # 3. Third Pass: Fuzzy Levenshtein Match (Distance <= max_distance)
-        best_match = None
-        min_dist = max_distance + 1
+        # Require string length >= 7 and matching state prefix to avoid false positive hits on short strings
+        if len(canonical_input) >= 7:
+            best_match = None
+            min_dist = max_distance + 1
 
-        for entry in watchlist_entries:
-            canonical_target = canonical_plate(entry.license_plate)
-            dist = levenshtein_distance(canonical_input, canonical_target)
-            if dist <= max_distance and dist < min_dist:
-                min_dist = dist
-                best_match = entry
+            for entry in watchlist_entries:
+                canonical_target = canonical_plate(entry.license_plate)
+                # State prefix must match to apply fuzzy edit distance
+                if len(canonical_target) >= 7 and canonical_input[:2] == canonical_target[:2]:
+                    dist = levenshtein_distance(canonical_input, canonical_target)
+                    if dist <= max_distance and dist < min_dist:
+                        min_dist = dist
+                        best_match = entry
 
-        if best_match:
-            confidence = 0.85 if min_dist == 1 else 0.70
-            return best_match, confidence
+            if best_match:
+                confidence = 0.85 if min_dist == 1 else 0.70
+                return best_match, confidence
 
         return None, 0.0
