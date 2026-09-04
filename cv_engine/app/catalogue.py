@@ -10,7 +10,7 @@ import json
 
 logger = logging.getLogger("CatalogueIngestion")
 
-DEFAULT_INGEST_URL = os.environ.get("INGEST_URL", "http://localhost:8000/api/v1/cameras")
+DEFAULT_INGEST_URL = os.environ.get("INGEST_URL", "http://localhost:8000/api/ingest")
 
 class CatalogueService:
     def __init__(self, ingest_url=DEFAULT_INGEST_URL):

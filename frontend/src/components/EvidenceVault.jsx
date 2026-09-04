@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, FileText, Download, Hash, AlertTriangle, Search, CheckCircle2, Lock, Printer, ExternalLink, Award } from 'lucide-react';
+import { API_BASE_URL } from '../config';
 
 export default function EvidenceVault() {
   const [certificates, setCertificates] = useState([]);
@@ -11,48 +12,18 @@ export default function EvidenceVault() {
 
   const fetchCertificates = () => {
     setLoading(true);
-    fetch('http://localhost:8000/api/v1/reports/certificates')
+    fetch(`${API_BASE_URL}/api/v1/reports/certificates`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
           setCertificates(data);
+        } else {
+          setCertificates([]);
         }
         setLoading(false);
       })
       .catch(() => {
-        // Sample fallback certificates if backend empty
-        setCertificates([
-          {
-            id: 1,
-            certificate_id: "CERT-BSA-2023-A98F10B24D",
-            detection_id: 101,
-            license_plate: "GJ01AB1234",
-            camera_id: "CAM-AHM-001",
-            violation_type: "INTER_CAMERA_SPEED_VIOLATION",
-            speed_recorded_kmh: 112.4,
-            speed_limit_kmh: 80.0,
-            fine_amount_inr: 2000,
-            sha256_hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-            digital_signature: "DIGISIGN//GUJ_POLICE_ANPR//e3b0c44298fc1c149afbf4c8996fb924",
-            bsa_admissibility_code: "BSA-2023-SEC63-CERTIFIED",
-            status: "ISSUED"
-          },
-          {
-            id: 2,
-            certificate_id: "CERT-BSA-2023-B72C9914FE",
-            detection_id: 104,
-            license_plate: "GJ18CD5678",
-            camera_id: "CAM-GND-002",
-            violation_type: "WATCHLIST_CRIMINAL_WANTED",
-            speed_recorded_kmh: 74.2,
-            speed_limit_kmh: 80.0,
-            fine_amount_inr: 5000,
-            sha256_hash: "8f434346648f6b96df89dda901c5176b10a6d83961dd3c1ac88b59b2dc327aa4",
-            digital_signature: "DIGISIGN//GUJ_POLICE_ANPR//8f434346648f6b96df89dda901c5176b",
-            bsa_admissibility_code: "BSA-2023-SEC63-CERTIFIED",
-            status: "ISSUED"
-          }
-        ]);
+        setCertificates([]);
         setLoading(false);
       });
   };
@@ -64,14 +35,13 @@ export default function EvidenceVault() {
   const openEChallanModal = (cert) => {
     setSelectedCert(cert);
     setDossierLoading(true);
-    fetch(`http://localhost:8000/api/v1/reports/echallan/${cert.certificate_id}`)
+    fetch(`${API_BASE_URL}/api/v1/reports/echallan/${cert.certificate_id}`)
       .then(res => res.json())
       .then(data => {
         setDossier(data);
         setDossierLoading(false);
       })
       .catch(() => {
-        // Fallback dossier
         setDossier({
           authority: "GUJARAT POLICE TRAFFIC ENFORCEMENT & HIGHWAY PATROL",
           jurisdiction: "STATE OF GUJARAT, INDIA",
@@ -81,18 +51,18 @@ export default function EvidenceVault() {
           issued_at: new Date().toISOString(),
           infraction_details: {
             license_plate: cert.license_plate,
-            vehicle_type: "SEDAN",
-            vehicle_color: "WHITE",
+            vehicle_type: "VEHICLE",
+            vehicle_color: "UNKNOWN",
             violation_type: cert.violation_type,
             recorded_speed_kmh: cert.speed_recorded_kmh,
             speed_limit_kmh: cert.speed_limit_kmh,
-            excess_speed_kmh: (cert.speed_recorded_kmh - cert.speed_limit_kmh).toFixed(1),
+            excess_speed_kmh: cert.speed_recorded_kmh && cert.speed_limit_kmh ? (cert.speed_recorded_kmh - cert.speed_limit_kmh).toFixed(1) : 0,
             fine_amount_inr: cert.fine_amount_inr
           },
           camera_location: {
             camera_id: cert.camera_id,
-            camera_name: "SG Highway - Iscon Crossroad",
-            city: "Ahmedabad",
+            camera_name: cert.camera_id,
+            city: "Gujarat",
             latitude: 23.0298,
             longitude: 72.5074
           },
@@ -108,9 +78,9 @@ export default function EvidenceVault() {
   };
 
   const filteredCerts = certificates.filter(c => 
-    c.license_plate.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.certificate_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.camera_id.toLowerCase().includes(searchTerm.toLowerCase())
+    (c.license_plate || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (c.certificate_id || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (c.camera_id || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -131,7 +101,7 @@ export default function EvidenceVault() {
 
         <div style={{ display: 'flex', gap: '12px' }}>
           <a
-            href="http://localhost:8000/api/v1/reports/export-csv"
+            href={`${API_BASE_URL}/api/v1/reports/export-csv`}
             download
             className="btn-secondary"
           >

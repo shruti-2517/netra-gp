@@ -36,8 +36,7 @@ export default function AlertFeed({ onWsStatusChange }) {
       .then(res => res.json())
       .then(data => {
         if (data && Array.isArray(data)) {
-          const cleanAlerts = data.filter(a => !a.camera_id || !a.camera_id.startsWith('CAM-BATCH-'));
-          setAlerts(cleanAlerts);
+          setAlerts(data);
         }
       })
       .catch(() => {});

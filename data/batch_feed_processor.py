@@ -96,7 +96,7 @@ def run_batch_processor(feeds_dir: str, output_dir: str):
         for r in batch_results:
             f.write(f"| `{r['feed']}` | {r['detections']} | {r['duration_sec']}s |\n")
 
-    logger.info(f"\n✅ Batch Processing Complete!")
+    logger.info(f"\nBatch Processing Complete!")
     logger.info(f"   CSV Detailed Log: {csv_path}")
     logger.info(f"   Markdown Summary: {summary_path}")
 

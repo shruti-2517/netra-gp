@@ -220,40 +220,57 @@ async def scan_live_frame(req: FrameScanRequest, db: Session = Depends(get_db)):
             matched_vehicle, match_conf = WatchlistMatcher.match_plate(db, cleaned)
             is_hit = matched_vehicle is not None
             
-            alert_id = None
-            threat = None
+            threat = matched_vehicle.threat_level if is_hit else "WARNING"
+            reason = matched_vehicle.reason if is_hit else "Live ANPR Grid Detection: Monitored License Plate"
+            alert_id = f"ALT-{uuid.uuid4().hex[:8].upper()}"
             
-            if is_hit:
-                threat = matched_vehicle.threat_level
-                reason = matched_vehicle.reason
-                alert_id = f"ALT-{int(datetime.datetime.utcnow().timestamp())}"
-                
-                # Persist Alert in database strictly for actual Watchlist matches
-                db_alert = Alert(
-                    alert_id=alert_id,
-                    detection_id=None,
-                    license_plate=cleaned,
-                    threat_level=threat,
-                    reason=reason,
-                    camera_id=req.camera_id,
-                    city="Ahmedabad / Live Webcam",
-                    timestamp=now_iso,
-                    is_acknowledged=False
-                )
-                db.add(db_alert)
-                db.commit()
+            # Get camera city name
+            camera = db.query(Camera).filter(Camera.camera_id == req.camera_id).first()
+            city_name = camera.city if camera else "Gujarat / Live Feed"
 
-                # Broadcast live alert to all frontend clients strictly on watchlist hit
-                await manager.broadcast({
-                    "event": "WATCHLIST_ALERT",
-                    "alert_id": alert_id,
-                    "license_plate": cleaned,
-                    "threat_level": threat,
-                    "reason": reason,
-                    "camera_id": req.camera_id,
-                    "city": "Ahmedabad / Live Webcam",
-                    "timestamp": now_iso
-                })
+            # 1. Always record DetectionEvent in DB
+            event = DetectionEvent(
+                camera_id=req.camera_id or "cam01",
+                timestamp=now_iso,
+                license_plate=cleaned,
+                raw_ocr_text=detected_text or cleaned,
+                detection_confidence=0.92,
+                ocr_confidence=round(confidence, 2),
+                vehicle_color="SILVER",
+                vehicle_type="SEDAN",
+                is_watchlist_hit=is_hit,
+                threat_level=threat
+            )
+            db.add(event)
+            db.commit()
+            db.refresh(event)
+
+            # 2. Persist Alert in database
+            db_alert = Alert(
+                alert_id=alert_id,
+                detection_id=event.id,
+                license_plate=cleaned,
+                threat_level=threat,
+                reason=reason,
+                camera_id=req.camera_id or "cam01",
+                city=city_name,
+                timestamp=now_iso,
+                is_read=False
+            )
+            db.add(db_alert)
+            db.commit()
+
+            # 3. Broadcast live WebSocket alert to all connected dashboards
+            await manager.broadcast({
+                "event": "WATCHLIST_ALERT" if is_hit else "LIVE_ANPR_ALERT",
+                "alert_id": alert_id,
+                "license_plate": cleaned,
+                "threat_level": threat,
+                "reason": reason,
+                "camera_id": req.camera_id or "cam01",
+                "city": city_name,
+                "timestamp": now_iso
+            })
 
             return {
                 "detected": True,
@@ -261,7 +278,8 @@ async def scan_live_frame(req: FrameScanRequest, db: Session = Depends(get_db)):
                 "raw_text": detected_text or cleaned,
                 "confidence": round(confidence, 2),
                 "is_watchlist_hit": is_hit,
-                "threat_level": threat
+                "threat_level": threat,
+                "alert_id": alert_id
             }
             
         return {"detected": False, "raw_text": detected_text, "message": "Scanning for plate..."}

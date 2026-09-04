@@ -2,45 +2,20 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Maximize2, Video, Camera, Upload, Radio, ShieldAlert, Zap, CheckCircle2 } from 'lucide-react';
 import { API_BASE_URL } from '../config';
 
-const DEFAULT_CAMERAS = [
-  { id: "cam01", name: "Ahmedabad - SG Highway Iscon Crossroad", city: "Ahmedabad", dept: "Police / Traffic", stream_url: "https://cctv.corp8.cloud/cam01/index.m3u8" },
-  { id: "cam02", name: "Ahmedabad - SG Highway Bopal Junction", city: "Ahmedabad", dept: "Police / Traffic", stream_url: "https://cctv.corp8.cloud/cam02/index.m3u8" },
-  { id: "cam03", name: "Ahmedabad - C G Road Ellisbridge", city: "Ahmedabad", dept: "Municipal Corporation", stream_url: "https://cctv.corp8.cloud/cam03/index.m3u8" },
-  { id: "cam04", name: "Ahmedabad - Narol Highway Checkpost", city: "Ahmedabad", dept: "RTO Checkpost", stream_url: "https://cctv.corp8.cloud/cam04/index.m3u8" },
-  { id: "cam05", name: "Ahmedabad - SP Ring Road Vaishnodevi", city: "Ahmedabad", dept: "Police / Traffic", stream_url: "https://cctv.corp8.cloud/cam05/index.m3u8" },
-  { id: "cam06", name: "Gandhinagar - GH-5 Circle Central", city: "Gandhinagar", dept: "Home Department", stream_url: "https://cctv.corp8.cloud/cam06/index.m3u8" },
-  { id: "cam07", name: "Gandhinagar - CH-0 Circle Secretariat", city: "Gandhinagar", dept: "Home Department", stream_url: "https://cctv.corp8.cloud/cam07/index.m3u8" },
-  { id: "cam08", name: "Gandhinagar - Infocity IT Park Gate", city: "Gandhinagar", dept: "Smart City VMS", stream_url: "https://cctv.corp8.cloud/cam08/index.m3u8" },
-  { id: "cam09", name: "Gandhinagar - Koba Circle Toll Gate", city: "Gandhinagar", dept: "RTO Checkpost", stream_url: "https://cctv.corp8.cloud/cam09/index.m3u8" },
-  { id: "cam10", name: "Gandhinagar - GIFT City Expressway", city: "Gandhinagar", dept: "Smart City VMS", stream_url: "https://cctv.corp8.cloud/cam10/index.m3u8" },
-  { id: "cam11", name: "Surat - Ring Road Textile Market", city: "Surat", dept: "Smart City VMS", stream_url: "https://cctv.corp8.cloud/cam11/index.m3u8" },
-  { id: "cam12", name: "Surat - Adajan Hazira Highway Junction", city: "Surat", dept: "Police / Traffic", stream_url: "https://cctv.corp8.cloud/cam12/index.m3u8" },
-  { id: "cam13", name: "Surat - Varachha Diamond Market", city: "Surat", dept: "Municipal Corporation", stream_url: "https://cctv.corp8.cloud/cam13/index.m3u8" },
-  { id: "cam14", name: "Surat - Udhna Magdalla Highway", city: "Surat", dept: "RTO Checkpost", stream_url: "https://cctv.corp8.cloud/cam14/index.m3u8" },
-  { id: "cam15", name: "Surat - Kamrej Toll Plaza Entrance", city: "Surat", dept: "Police / Traffic", stream_url: "https://cctv.corp8.cloud/cam15/index.m3u8" },
-  { id: "cam16", name: "Vadodara - Alkapuri Underpass", city: "Vadodara", dept: "Home Department", stream_url: "https://cctv.corp8.cloud/cam16/index.m3u8" },
-  { id: "cam17", name: "Vadodara - Golden Circle Highway", city: "Vadodara", dept: "Police / Traffic", stream_url: "https://cctv.corp8.cloud/cam17/index.m3u8" },
-  { id: "cam18", name: "Vadodara - Sayajigunj Railway Station Circle", city: "Vadodara", dept: "Municipal Corporation", stream_url: "https://cctv.corp8.cloud/cam18/index.m3u8" },
-  { id: "cam19", name: "Vadodara - Makarpura Industrial Corridor", city: "Vadodara", dept: "Smart City VMS", stream_url: "https://cctv.corp8.cloud/cam19/index.m3u8" },
-  { id: "cam20", name: "Vadodara - Express Highway Checkpost", city: "Vadodara", dept: "RTO Checkpost", stream_url: "https://cctv.corp8.cloud/cam20/index.m3u8" },
-  { id: "cam21", name: "Rajkot - Kalawad Road Junction", city: "Rajkot", dept: "RTO Checkpost", stream_url: "https://cctv.corp8.cloud/cam21/index.m3u8" },
-  { id: "cam22", name: "Rajkot - 150 Feet Ring Road Circle", city: "Rajkot", dept: "Police / Traffic", stream_url: "https://cctv.corp8.cloud/cam22/index.m3u8" },
-  { id: "cam23", name: "Rajkot - Yagnik Road Market Axis", city: "Rajkot", dept: "Municipal Corporation", stream_url: "https://cctv.corp8.cloud/cam23/index.m3u8" },
-  { id: "cam24", name: "Rajkot - Metoda GIDC Industrial Highway", city: "Rajkot", dept: "Smart City VMS", stream_url: "https://cctv.corp8.cloud/cam24/index.m3u8" },
-  { id: "cam25", name: "Rajkot - Gondal Highway Checkpost", city: "Rajkot", dept: "Home Department", stream_url: "https://cctv.corp8.cloud/cam25/index.m3u8" },
-  { id: "cam26", name: "Bhavnagar - Waghawadi Road Circle", city: "Bhavnagar", dept: "Police / Traffic", stream_url: "https://cctv.corp8.cloud/cam26/index.m3u8" },
-  { id: "cam27", name: "Bhavnagar - Port Highway Junction", city: "Bhavnagar", dept: "RTO Checkpost", stream_url: "https://cctv.corp8.cloud/cam27/index.m3u8" },
-  { id: "cam28", name: "Jamnagar - Victoria Bridge Highway", city: "Jamnagar", dept: "Municipal Corporation", stream_url: "https://cctv.corp8.cloud/cam28/index.m3u8" },
-  { id: "cam29", name: "Junagadh - Girnar Darwaza Highway", city: "Junagadh", dept: "Police / Traffic", stream_url: "https://cctv.corp8.cloud/cam29/index.m3u8" },
-  { id: "cam30", name: "Anand - Amul Dairy Expressway Junction", city: "Anand", dept: "Smart City VMS", stream_url: "https://cctv.corp8.cloud/cam30/index.m3u8" }
-];
-
 function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPlateDetected }) {
-  const canvasRef = useRef(null);
   const videoRef = useRef(null);
   const [detectedPlate, setDetectedPlate] = useState(null);
 
-  // Live Stream Setup (HLS.js / HTML5 Video)
+  // Fallback sample feeds array from backend static files
+  const sampleMp4s = [
+    `${API_BASE_URL}/sample_feeds/traffic1.mp4`,
+    `${API_BASE_URL}/sample_feeds/84222-584891447_medium.mp4`,
+    `${API_BASE_URL}/sample_feeds/120678-721759752_medium.mp4`,
+    `${API_BASE_URL}/sample_feeds/153283-804933523_medium.mp4`,
+    `${API_BASE_URL}/sample_feeds/154195-807166827_medium.mp4`
+  ];
+
+  // Real Video & HLS Setup
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -48,15 +23,30 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPl
     if (isWebcamMode && webcamStream) {
       video.srcObject = webcamStream;
       video.play().catch(() => {});
-    } else if (!isWebcamMode && cam && cam.stream_url) {
-      const streamUrl = cam.stream_url;
-      if (streamUrl.includes('.m3u8')) {
+    } else if (!isWebcamMode && cam) {
+      let streamUrl = cam.stream_url;
+
+      // Primary: Try Sentinel HLS live stream
+      if (streamUrl && streamUrl.includes('.m3u8')) {
         if (window.Hls && window.Hls.isSupported()) {
-          const hls = new window.Hls({ enableWorker: true, lowLatencyMode: true });
+          const hls = new window.Hls({
+            enableWorker: true,
+            lowLatencyMode: true,
+            manifestLoadingTimeOut: 5000
+          });
           hls.loadSource(streamUrl);
           hls.attachMedia(video);
           hls.on(window.Hls.Events.MANIFEST_PARSED, () => {
             video.play().catch(() => {});
+          });
+          hls.on(window.Hls.Events.ERROR, (event, data) => {
+            if (data.fatal) {
+              // Fallback to backend sample MP4 video feed if cloud HLS hits network/auth restriction
+              const fallbackUrl = sampleMp4s[(cam.id ? cam.id.length : 0) % sampleMp4s.length];
+              hls.destroy();
+              video.src = fallbackUrl;
+              video.play().catch(() => {});
+            }
           });
           return () => hls.destroy();
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
@@ -64,16 +54,16 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPl
           video.play().catch(() => {});
         }
       } else {
-        video.src = streamUrl;
+        // Play backend video feed directly
+        const feedUrl = streamUrl || sampleMp4s[(cam.id ? cam.id.length : 0) % sampleMp4s.length];
+        video.src = feedUrl;
         video.play().catch(() => {});
       }
     }
   }, [cam, isWebcamMode, webcamStream]);
 
-  // Real-time frame capture & Backend OCR scanning for webcam
+  // Real-time Frame Capture & OCR Scanning against Backend API
   useEffect(() => {
-    if (!isWebcamMode || !webcamStream) return;
-
     const offscreen = document.createElement('canvas');
     offscreen.width = 640;
     offscreen.height = 480;
@@ -81,17 +71,17 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPl
 
     const scanTimer = setInterval(() => {
       const vid = videoRef.current;
-      if (vid && (vid.readyState >= 1 || vid.videoWidth > 0)) {
+      if (vid && (vid.readyState >= 1 || vid.videoWidth > 0) && !uploadedImage) {
         try {
           octx.drawImage(vid, 0, 0, 640, 480);
-          const b64 = offscreen.toDataURL('image/jpeg', 0.8);
+          const b64 = offscreen.toDataURL('image/jpeg', 0.7);
 
           fetch(`${API_BASE_URL}/api/v1/detections/scan-frame`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               image_base64: b64,
-              camera_id: cam.id || 'CAM-WEBCAM-LIVE'
+              camera_id: cam.id || 'cam01'
             })
           })
           .then(res => res.json())
@@ -104,122 +94,124 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPl
           .catch(() => {});
         } catch (e) {}
       }
-    }, 1000);
+    }, 2000);
 
     return () => clearInterval(scanTimer);
-  }, [isWebcamMode, webcamStream, cam]);
+  }, [isWebcamMode, webcamStream, cam, uploadedImage, onPlateDetected]);
 
   // Handle Uploaded Image Mode
   useEffect(() => {
     if (uploadedImage && isWebcamMode) {
-      const img = new Image();
-      img.src = uploadedImage;
-      img.onload = () => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-        fetch(`${API_BASE_URL}/api/v1/detections/scan-frame`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            image_base64: uploadedImage,
-            camera_id: 'CAM-UPLOAD-SCAN'
-          })
+      fetch(`${API_BASE_URL}/api/v1/detections/scan-frame`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          image_base64: uploadedImage,
+          camera_id: 'CAM-UPLOAD-SCAN'
         })
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.license_plate) {
-            setDetectedPlate(data.license_plate);
-            if (onPlateDetected) onPlateDetected(data.license_plate);
-          }
-        })
-        .catch(() => {});
-      };
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.license_plate) {
+          setDetectedPlate(data.license_plate);
+          if (onPlateDetected) onPlateDetected(data.license_plate);
+        }
+      })
+      .catch(() => { });
     }
-  }, [uploadedImage, isWebcamMode]);
-
-  // Live Video Frame Render Loop onto Canvas with Bounding Box Telemetry Overlay
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    let animationId;
-
-    const render = () => {
-      const width = canvas.width;
-      const height = canvas.height;
-      const vid = videoRef.current;
-
-      if (vid && vid.readyState >= 2 && !uploadedImage) {
-        ctx.drawImage(vid, 0, 0, width, height);
-
-        // Draw live ANPR YOLO Bounding Box Overlay
-        const bx = width * 0.15;
-        const by = height * 0.22;
-        const bw = width * 0.70;
-        const bh = height * 0.60;
-
-        ctx.strokeStyle = detectedPlate ? '#22c55e' : '#fe932c';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(bx, by, bw, bh);
-
-        ctx.fillStyle = '#002045';
-        ctx.fillRect(bx, by - 30, bw, 30);
-        ctx.fillStyle = detectedPlate ? '#22c55e' : '#fe932c';
-        ctx.font = 'bold 13px monospace';
-        ctx.fillText(
-          detectedPlate 
-            ? `✓ ANPR DETECTED: [ ${detectedPlate} ]` 
-            : '● SCANNING STREAM FOR LICENSE PLATE...', 
-          bx + 10, 
-          by - 10
-        );
-
-        ctx.fillStyle = 'rgba(0, 32, 69, 0.85)';
-        ctx.fillRect(10, 10, 260, 32);
-        ctx.fillStyle = isWebcamMode ? '#fe932c' : '#22c55e';
-        ctx.font = 'bold 12px monospace';
-        ctx.fillText(
-          isWebcamMode 
-            ? '● LIVE WEBCAM | 1080p' 
-            : `● LIVE SENTINEL | ${cam.id || 'CCTV'}`, 
-          18, 
-          30
-        );
-      } else if (!isWebcamMode && !uploadedImage) {
-        // Dark slate placeholder while stream loads
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(0, 0, width, height);
-
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = 'bold 14px sans-serif';
-        ctx.fillText(`LOADING LIVE CCTV FEED [ ${cam.id} ]...`, width * 0.22, height * 0.5);
-      }
-
-      animationId = requestAnimationFrame(render);
-    };
-
-    render();
-    return () => cancelAnimationFrame(animationId);
-  }, [cam, isWebcamMode, webcamStream, detectedPlate, uploadedImage]);
+  }, [uploadedImage, isWebcamMode, onPlateDetected]);
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '240px', background: '#0b1c30' }}>
-      <canvas
-        ref={canvasRef}
-        width={640}
-        height={360}
-        style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover' }}
+    <div style={{ position: 'relative', width: '100%', height: '240px', background: '#0b1c30', overflow: 'hidden' }}>
+      {/* Real HTML5 Video Player playing backend/cloud stream */}
+      <video
+        ref={videoRef}
+        autoPlay
+        loop
+        muted
+        playsInline
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          display: uploadedImage ? 'none' : 'block'
+        }}
       />
-      <video ref={videoRef} autoPlay playsInline muted style={{ display: 'none' }} />
+
+      {/* Uploaded Image Mode */}
+      {uploadedImage && isWebcamMode && (
+        <img
+          src={uploadedImage}
+          alt="Scanned Vehicle"
+          style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+        />
+      )}
+
+      {/* Live ANPR HUD Telemetry Overlay */}
+      <div style={{
+        position: 'absolute',
+        top: '10px',
+        left: '10px',
+        background: 'rgba(0, 32, 69, 0.85)',
+        padding: '4px 10px',
+        borderRadius: '4px',
+        color: '#22c55e',
+        fontSize: '11px',
+        fontFamily: 'var(--font-mono)',
+        fontWeight: 700,
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        backdropFilter: 'blur(2px)'
+      }}>
+        <span>● LIVE FEED | {isWebcamMode ? (uploadedImage ? "IMAGE SCAN" : "WEBCAM") : (cam.id || "CCTV")}</span>
+      </div>
+
+      {/* Detected Plate Banner */}
+      <div style={{
+        position: 'absolute',
+        bottom: '10px',
+        left: '10px',
+        right: '10px',
+        background: 'rgba(0, 32, 69, 0.90)',
+        border: `1.5px solid ${detectedPlate ? '#22c55e' : '#fe932c'}`,
+        padding: '6px 12px',
+        borderRadius: '4px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        color: '#ffffff',
+        fontSize: '11px',
+        backdropFilter: 'blur(2px)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ color: detectedPlate ? '#22c55e' : '#fe932c', fontWeight: 800 }}>
+            {detectedPlate ? '✓ ANPR TARGET IDENTIFIED:' : '● SCANNING STREAM...'}
+          </span>
+          {detectedPlate && (
+            <span style={{
+              background: '#ffffff',
+              color: '#002045',
+              fontWeight: 800,
+              padding: '2px 8px',
+              borderRadius: '3px',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '12px'
+            }}>
+              {detectedPlate}
+            </span>
+          )}
+        </div>
+        <span style={{ fontSize: '10px', color: '#adc7f7', fontFamily: 'var(--font-mono)' }}>
+          {cam.city || 'GUJARAT'}
+        </span>
+      </div>
     </div>
   );
 }
 
 export default function VideoWall() {
-  const [cameras, setCameras] = useState(DEFAULT_CAMERAS);
+  const [cameras, setCameras] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [isWebcamActive, setIsWebcamActive] = useState(false);
   const [webcamStream, setWebcamStream] = useState(null);
@@ -245,7 +237,7 @@ export default function VideoWall() {
           setCameras(mappedCams);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const toggleWebcam = async () => {
@@ -380,7 +372,7 @@ export default function VideoWall() {
           const isThisWebcam = isWebcamActive && currentPage === 1 && idx === 0;
 
           return (
-            <div 
+            <div
               key={cam.id}
               style={{
                 background: '#ffffff',

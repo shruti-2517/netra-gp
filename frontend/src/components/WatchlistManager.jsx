@@ -1,41 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldAlert, Plus, Search, Filter, Trash2, AlertOctagon } from 'lucide-react';
-
-const DEFAULT_WATCHLIST = [
-  {
-    watchlist_id: "WL-001",
-    license_plate: "GJ01AB1234",
-    vehicle_make: "Hyundai Creta",
-    color: "White",
-    reason: "Stolen Vehicle FIR #2026/089",
-    category: "STOLEN",
-    threat_level: "HIGH",
-    owner_name: "Unknown Suspect"
-  },
-  {
-    watchlist_id: "WL-002",
-    license_plate: "GJ18CD5678",
-    vehicle_make: "Mahindra Scorpio",
-    color: "Black",
-    reason: "Wanted in Robbery Case (Crime Branch)",
-    category: "CRIMINAL_WANTED",
-    threat_level: "CRITICAL",
-    owner_name: "Ramesh Patel"
-  },
-  {
-    watchlist_id: "WL-003",
-    license_plate: "GJ05EF9012",
-    vehicle_make: "Maruti Swift",
-    color: "Silver",
-    reason: "Expired Permit / Suspicious Registration",
-    category: "TRAFFIC_VIOLATION",
-    threat_level: "MEDIUM",
-    owner_name: "Suresh Shah"
-  }
-];
+import { API_BASE_URL } from '../config';
 
 export default function WatchlistManager() {
-  const [watchlist, setWatchlist] = useState(DEFAULT_WATCHLIST);
+  const [watchlist, setWatchlist] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -52,10 +20,10 @@ export default function WatchlistManager() {
   });
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/v1/watchlist')
+    fetch(`${API_BASE_URL}/api/v1/watchlist`)
       .then(res => res.json())
       .then(data => {
-        if (data && data.length > 0) setWatchlist(data);
+        if (data && Array.isArray(data)) setWatchlist(data);
       })
       .catch(() => {});
   }, []);
@@ -69,7 +37,7 @@ export default function WatchlistManager() {
     setWatchlist([created, ...watchlist]);
     setShowAddModal(false);
 
-    fetch('http://localhost:8000/api/v1/watchlist', {
+    fetch(`${API_BASE_URL}/api/v1/watchlist`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(created)

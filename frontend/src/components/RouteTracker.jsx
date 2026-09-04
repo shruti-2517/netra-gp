@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Route, Navigation, Compass, AlertCircle, Radio, ShieldAlert, Crosshair, ArrowRight } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Polyline, Popup, Circle } from 'react-leaflet';
 import L from 'leaflet';
+import { API_BASE_URL } from '../config';
 
 const waypointsIcon = L.divIcon({
   className: 'route-waypoint-marker',
@@ -43,49 +44,15 @@ const predictedIcon = L.divIcon({
   iconAnchor: [16, 16],
 });
 
-const DEFAULT_ROUTE_DATA = {
-  license_plate: "GJ01AB1234",
-  total_detections: 3,
-  waypoints: [
-    {
-      sequence: 1,
-      camera_id: "CAM-AHM-001",
-      camera_name: "SG Highway - Iscon Crossroad",
-      city: "Ahmedabad",
-      latitude: 23.0298,
-      longitude: 72.5074,
-      timestamp: "2026-09-02T10:15:00Z",
-      confidence: 0.92,
-      speed_kmh: null
-    },
-    {
-      sequence: 2,
-      camera_id: "CAM-GND-002",
-      camera_name: "GH-5 Circle",
-      city: "Gandhinagar",
-      latitude: 23.2156,
-      longitude: 72.6369,
-      timestamp: "2026-09-02T11:45:00Z",
-      confidence: 0.88,
-      speed_kmh: 88.5
-    },
-    {
-      sequence: 3,
-      camera_id: "CAM-BRD-004",
-      camera_name: "Alkapuri Underpass",
-      city: "Vadodara",
-      latitude: 22.3072,
-      longitude: 73.1812,
-      timestamp: "2026-09-02T14:30:00Z",
-      confidence: 0.94,
-      speed_kmh: 114.2
-    }
-  ]
+const EMPTY_ROUTE_DATA = {
+  license_plate: "",
+  total_detections: 0,
+  waypoints: []
 };
 
 export default function RouteTracker() {
   const [searchPlate, setSearchPlate] = useState('GJ01AB1234');
-  const [routeData, setRouteData] = useState(DEFAULT_ROUTE_DATA);
+  const [routeData, setRouteData] = useState(EMPTY_ROUTE_DATA);
   const [prediction, setPrediction] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -94,19 +61,19 @@ export default function RouteTracker() {
     setLoading(true);
     
     // 1. Fetch historical route waypoints
-    fetch(`http://localhost:8000/api/v1/tracking/${plate}`)
+    fetch(`${API_BASE_URL}/api/v1/tracking/${plate}`)
       .then(res => res.json())
       .then(data => {
-        if (data && data.waypoints && data.waypoints.length > 0) {
+        if (data && data.waypoints) {
           setRouteData(data);
         } else {
-          setRouteData(DEFAULT_ROUTE_DATA);
+          setRouteData({ license_plate: plate, total_detections: 0, waypoints: [] });
         }
       })
-      .catch(() => setRouteData(DEFAULT_ROUTE_DATA));
+      .catch(() => setRouteData({ license_plate: plate, total_detections: 0, waypoints: [] }));
 
     // 2. Fetch predictive interception forecast
-    fetch(`http://localhost:8000/api/v1/tracking/${plate}/predict`)
+    fetch(`${API_BASE_URL}/api/v1/tracking/${plate}/predict`)
       .then(res => res.json())
       .then(pred => {
         if (pred && pred.predicted_checkpoints) {
@@ -116,25 +83,7 @@ export default function RouteTracker() {
         }
       })
       .catch(() => {
-        // Fallback prediction
-        setPrediction({
-          license_plate: plate,
-          heading_degrees: 154.2,
-          confidence_score: 0.82,
-          predicted_checkpoints: [
-            {
-              camera_id: "CAM-SRT-003",
-              camera_name: "Ring Road - Textile Market",
-              city: "Surat",
-              latitude: 21.1959,
-              longitude: 72.8302,
-              distance_km: 124.5,
-              eta_minutes: 65,
-              probability_score: 0.82,
-              recommended_action: "DISPATCH_PATROL_INTERCEPT"
-            }
-          ]
-        });
+        setPrediction(null);
       })
       .finally(() => setLoading(false));
   };
@@ -143,8 +92,9 @@ export default function RouteTracker() {
     fetchRouteAndPrediction(searchPlate);
   }, []);
 
-  const polylineCoords = routeData.waypoints.map(w => [w.latitude, w.longitude]);
-  const lastWaypoint = routeData.waypoints[routeData.waypoints.length - 1];
+  const waypoints = routeData?.waypoints || [];
+  const polylineCoords = waypoints.map(w => [w.latitude, w.longitude]);
+  const lastWaypoint = waypoints.length > 0 ? waypoints[waypoints.length - 1] : null;
 
   // Predictive vector connecting last known waypoint to top predicted checkpoints
   const predictedCoords = (prediction && prediction.predicted_checkpoints && lastWaypoint)

@@ -85,7 +85,7 @@ function DashboardContent() {
       </div>
 
       {/* 5. Fixed Bottom Footer Status Bar (~28px) */}
-      <Footer cameraCount={5} wsConnected={wsConnected} />
+      <Footer cameraCount={30} wsConnected={wsConnected} />
     </div>
   );
 }

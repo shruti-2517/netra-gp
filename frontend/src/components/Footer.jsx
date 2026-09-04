@@ -2,15 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { Activity, Radio, Database, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-export default function Footer({ cameraCount = 5, wsConnected = true }) {
+import { API_BASE_URL } from '../config';
+
+export default function Footer({ cameraCount: propCameraCount = 30, wsConnected = true }) {
   const { currentRole } = useAuth();
   const [apiOnline, setApiOnline] = useState(true);
+  const [activeCamCount, setActiveCamCount] = useState(propCameraCount);
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/v1/health')
+    fetch(`${API_BASE_URL}/api/v1/health`)
       .then(res => res.json())
       .then(() => setApiOnline(true))
       .catch(() => setApiOnline(false));
+
+    fetch(`${API_BASE_URL}/api/v1/cameras`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && Array.isArray(data) && data.length > 0) {
+          setActiveCamCount(data.length);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   return (
@@ -55,7 +67,7 @@ export default function Footer({ cameraCount = 5, wsConnected = true }) {
         {/* Active Feeds Count (moved from header to footer per section 1 & 2) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#ffffff' }}>
           <Radio size={11} color="#fe932c" />
-          <span>{cameraCount} FEEDS ACTIVE (H.264/H.265)</span>
+          <span>{activeCamCount} FEEDS ACTIVE (H.264/H.265)</span>
         </div>
       </div>
 
