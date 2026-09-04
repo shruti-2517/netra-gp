@@ -11,7 +11,7 @@ This repository contains a working prototype of an integrated video management a
 ### Key Architecture
 - **Model 1 (Registry & GIS Map)**: Centralized database of camera metadata with interactive GIS spatial mapping (PostGIS + Leaflet).
 - **Model 2 (Unified Viewing & ANPR Analytics)**: Real-time live RTSP stream ingestion, license plate detection (YOLOv8), multi-pass OCR (EasyOCR + CLAHE + Otsu), watchlist correlation, and Section 63 BSA 2023 digital evidence certificate vault.
-- **Model 4 (Distributed Microservices)**: Fully containerized architecture orchestrated via Docker Compose, bridging PostgreSQL, Kafka, MinIO, and scalable standalone CV workers.
+- **Model 4 (Distributed Microservices)**: Architecture bridging PostgreSQL, Kafka, MinIO, and scalable standalone CV workers.
 - **Decoupled Analytics via Kafka**: Stream ingestion and ANPR workloads are decoupled using a pub/sub event-driven architecture (`netra.streams.ingest`), enabling horizontal scaling of YOLOv8/EasyOCR pipelines.
 - **Resilient Cloud Storage (S3/MinIO)**: Violation evidence clips and BSA 2023 compliant certificates are persisted securely via S3-compatible resilient object storage.
 - **Role-Based Access Control (RBAC)**: Secure multi-tenant access utilizing JWT authentication with strict, cryptographically enforced department-level camera isolation.
@@ -73,4 +73,4 @@ python main.py
 
 - **3rd-Party Evaluation & Testing Guide**: Located at [`EVALUATION_GUIDE.md`](EVALUATION_GUIDE.md)
 - **High-Level Design Document**: Located at [`docs/HLD_ARCHITECTURE.md`](docs/HLD_ARCHITECTURE.md)
-- **Demo Script**: Located at [`docs/DEMO_SCRIPT.md`](docs/DEMO_pSCRIPT.md)
+- **Demo Script**: Located at [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md)
