@@ -14,6 +14,7 @@ from app.seed import seed_initial_data
 from app.services.websocket_manager import manager
 from app.services.live_streamer import generate_live_stream_frames
 from app.services.kafka_producer import shutdown_kafka_producer, publish_stream_task
+from app.services.kafka_consumer import start_detection_consumer
 from app.api.v1.routers import auth, cameras, watchlist, detections, reports
 
 logging.basicConfig(level=logging.INFO)
@@ -30,6 +31,9 @@ async def lifespan(app: FastAPI):
         seed_initial_data(db)
     finally:
         db.close()
+    # Start background Kafka consumer for remote analytics results
+    import asyncio
+    asyncio.create_task(start_detection_consumer())
     yield
     # Shutdown: clean up Kafka producer
     await shutdown_kafka_producer()
