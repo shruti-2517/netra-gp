@@ -73,4 +73,4 @@ python main.py
 
 - **3rd-Party Evaluation & Testing Guide**: Located at [`EVALUATION_GUIDE.md`](EVALUATION_GUIDE.md)
 - **High-Level Design Document**: Located at [`docs/HLD_ARCHITECTURE.md`](docs/HLD_ARCHITECTURE.md)
-- **Demo Script**: Located at [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md)
+- **Demo Script**: Located at [`docs/DEMO_SCRIPT.md`](docs/DEMO_pSCRIPT.md)
