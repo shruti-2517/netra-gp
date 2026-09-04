@@ -46,4 +46,5 @@ temp/
 *.webm
 !data/sample_feeds/*.mp4
 
-
+# Docker Desktop WSL
+DockerDesktopWSL/
