@@ -13,6 +13,7 @@ from app.models import Camera
 from app.seed import seed_initial_data
 from app.services.websocket_manager import manager
 from app.services.live_streamer import generate_live_stream_frames
+from app.services.kafka_producer import shutdown_kafka_producer, publish_stream_task
 from app.api.v1.routers import auth, cameras, watchlist, detections, reports
 
 logging.basicConfig(level=logging.INFO)
@@ -30,7 +31,8 @@ async def lifespan(app: FastAPI):
     finally:
         db.close()
     yield
-    # Shutdown logic if needed
+    # Shutdown: clean up Kafka producer
+    await shutdown_kafka_producer()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -92,6 +94,16 @@ def get_ingest_catalogue(db: Session = Depends(get_db)):
             }
         })
     return catalogue
+
+@app.post("/api/ingest/publish")
+async def publish_cameras_to_kafka(db: Session = Depends(get_db)):
+    """Publishes all active camera stream tasks to Kafka for distributed ingestion."""
+    db_cams = db.query(Camera).filter(Camera.status == "ACTIVE").all()
+    count = 0
+    for c in db_cams:
+        await publish_stream_task(c.camera_id, c.stream_url, c.department)
+        count += 1
+    return {"published": count, "topic": "netra.streams.ingest"}
 
 # Live Real-Time OpenCV & YOLO Stream Endpoint
 @app.get("/api/v1/streams/live/{camera_id}")

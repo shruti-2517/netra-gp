@@ -18,6 +18,7 @@ from app.services.speed_calculator import SpeedCalculator
 from app.services.interception_predictor import InterceptionPredictor
 from app.services.websocket_manager import manager
 from app.services.s3_storage import upload_bytes_to_s3
+from app.services.kafka_producer import publish_detection_result
 
 logger = logging.getLogger("DetectionsRouter")
 
@@ -160,6 +161,17 @@ async def ingest_detection(detection_in: DetectionEventCreate, db: Session = Dep
             # Upload evidence artifact to S3
             evidence_json = f'{{"alert_id":"{alert.alert_id}","plate":"{detection_in.license_plate}","hash":"{evidence_hash}"}}'.encode("utf-8")
             upload_bytes_to_s3(evidence_json, f"evidence/{alert.alert_id}.json", content_type="application/json")
+
+    # Publish detection result to Kafka for downstream analytics workers
+    await publish_detection_result({
+        "detection_id": event.id,
+        "camera_id": event.camera_id,
+        "license_plate": event.license_plate,
+        "timestamp": event.timestamp,
+        "speed_kmh": speed_kmh,
+        "is_watchlist_hit": is_hit,
+        "threat_level": threat
+    })
 
     return event
 
