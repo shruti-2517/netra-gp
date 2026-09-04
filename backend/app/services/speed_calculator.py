@@ -57,29 +57,31 @@ class SpeedCalculator:
             current_cam.latitude, current_cam.longitude
         )
 
-        # Parse timestamps (ISO format)
+        # Parse timestamps (ISO format or PTS)
         try:
             t_curr = datetime.fromisoformat(current_timestamp_str.replace("Z", "+00:00"))
             t_prev = datetime.fromisoformat(prev_detection.timestamp.replace("Z", "+00:00"))
             elapsed_seconds = abs((t_curr - t_prev).total_seconds())
         except Exception:
-            # Fallback: if relative or non-ISO timestamp
-            elapsed_seconds = 120.0 # Assumed 2 min window for test data
+            return None, False, None # Invalid timestamp format; do not guess
 
         if elapsed_seconds <= 0.5:
-            return None, False, None # Too close or instantaneous duplicate
+            return None, False, None # Too close or instantaneous duplicate frame
 
         # Speed in km/h = (distance in km) / (hours elapsed)
         elapsed_hours = elapsed_seconds / 3600.0
         calculated_speed = round(distance_km / elapsed_hours, 1)
 
-        # Filter out unrealistic telemetry glitches (e.g. > 250 km/h or < 5 km/h)
-        if calculated_speed > 250.0:
-            calculated_speed = round(min(calculated_speed, 118.5), 1)
+        # Glitch filter: Ignore non-physical speeds (> 250 km/h or < 2 km/h)
+        if calculated_speed > 250.0 or calculated_speed < 2.0:
+            return None, False, None
 
-        is_violation = calculated_speed > speed_limit_kmh
+        # Enforce 5% speedometer tolerance buffer before flagging violation
+        enforced_threshold = round(speed_limit_kmh * 1.05, 1)
+        is_violation = calculated_speed > enforced_threshold
+
         details = (
-            f"Average Speed: {calculated_speed} km/h (Limit: {speed_limit_kmh} km/h) "
+            f"Average Speed: {calculated_speed} km/h (Enforced Threshold: {enforced_threshold} km/h, Limit: {speed_limit_kmh} km/h) "
             f"over {distance_km:.2f} km between [{prev_cam.name}] and [{current_cam.name}]."
         )
 
