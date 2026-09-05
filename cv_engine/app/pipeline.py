@@ -28,9 +28,11 @@ class ANPRPipeline:
             
             for det in detections:
                 ocr_result = self.ocr_engine.extract_text(det['crop'])
-                if ocr_result and ocr_result.get('normalized_plate') and len(ocr_result['normalized_plate']) >= 3:
+                if ocr_result and ocr_result.get('normalized_plate'):
                     raw_plate = ocr_result['normalized_plate']
                     plate_read = normalize_plate_number(raw_plate)
+                    if not plate_read or len(plate_read) < 7 or len(plate_read) > 10:
+                        continue
                     
                     # Phase 2: Classify Vehicle Color & Body Type
                     v_color = VMMCClassifier.classify_vehicle_color(det.get('crop'))
@@ -88,9 +90,11 @@ class ANPRPipeline:
         
         for det in detections:
             ocr_result = self.ocr_engine.extract_text(det['crop'])
-            if ocr_result and ocr_result.get('normalized_plate') and len(ocr_result['normalized_plate']) >= 3:
+            if ocr_result and ocr_result.get('normalized_plate'):
                 raw_plate = ocr_result['normalized_plate']
                 plate_read = normalize_plate_number(raw_plate)
+                if not plate_read or len(plate_read) < 7 or len(plate_read) > 10:
+                    continue
                 results.append({
                     'camera_id': camera_id,
                     'pts_ms': 0.0,

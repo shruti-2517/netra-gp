@@ -30,19 +30,14 @@ async def start_detection_consumer():
         value_deserializer=lambda m: json.loads(m.decode("utf-8"))
     )
 
-    # Retry loop — broker may not be ready at backend startup
-    for attempt in range(1, MAX_RETRIES + 1):
-        try:
-            await consumer.start()
-            logger.info(f"Connected to Kafka on attempt {attempt}, listening on {settings.KAFKA_TOPIC_DETECTIONS}")
-            break
-        except Exception as e:
-            delay = RETRY_BASE_DELAY * (2 ** (attempt - 1))
-            logger.warning(f"Kafka connection attempt {attempt}/{MAX_RETRIES} failed: {e}. Retrying in {delay}s...")
-            if attempt == MAX_RETRIES:
-                logger.error("Kafka consumer could not connect after max retries — running without live detection ingestion.")
-                return
-            await asyncio.sleep(delay)
+    # Retry loop — broker may not be ready at backend startup or running in local mode
+    try:
+        await consumer.start()
+        logger.info(f"Connected to Kafka, listening on {settings.KAFKA_TOPIC_DETECTIONS}")
+    except Exception as e:
+        logger.info("Kafka broker optional; operating in Direct Local Ingestion Mode.")
+        await consumer.stop()
+        return
 
     processed_count = 0
     try:
