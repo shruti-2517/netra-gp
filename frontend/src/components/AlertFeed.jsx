@@ -331,34 +331,60 @@ export default function AlertFeed({ onWsStatusChange }) {
             </div>
           ) : (
             filteredAlerts.map(a => {
-              const isSpeed = a.event === 'SPEED_VIOLATION_ALERT' || 
-                              a.is_speed_violation || 
-                              Boolean(a.speed_kmh) || 
-                              (a.reason && (
-                                a.reason.toLowerCase().includes('overspeeding') || 
-                                a.reason.toLowerCase().includes('speed') || 
-                                a.reason.toLowerCase().includes('km/h') ||
-                                a.reason.toLowerCase().includes('limit')
-                              ));
-              const isCrit = !isSpeed && a.threat_level === 'CRITICAL';
-              const isHigh = !isSpeed && a.threat_level === 'HIGH';
+              // 1. Explicitly check if it's a Watchlist Match
+              const isWatchlist = Boolean(
+                a.is_watchlist_hit ||
+                (a.category && a.category.toLowerCase().includes('watchlist')) ||
+                (a.reason && (
+                  a.reason.toLowerCase().includes('watchlist') ||
+                  a.reason.toLowerCase().includes('stolen') ||
+                  a.reason.toLowerCase().includes('wanted') ||
+                  a.reason.toLowerCase().includes('robbery') ||
+                  a.reason.toLowerCase().includes('hit & run')
+                )) ||
+                a.event === 'WATCHLIST_ALERT'
+              );
+
+              // 2. Explicitly check if it's a Speed Violation
+              const isSpeed = Boolean(
+                !isWatchlist && (
+                  a.is_speed_violation ||
+                  a.category === 'SPEED_VIOLATION' ||
+                  a.event === 'SPEED_VIOLATION_ALERT' ||
+                  (a.reason && (
+                    a.reason.toLowerCase().includes('overspeeding') ||
+                    a.reason.toLowerCase().includes('speed violation') ||
+                    a.reason.toLowerCase().includes('limit:')
+                  ))
+                )
+              );
+
+              const isCrit = isWatchlist && (a.threat_level === 'CRITICAL' || (a.reason && a.reason.toLowerCase().includes('critical')));
 
               let badgeText = '📸 ANPR SCAN';
               let badgeBg = '#e2e8f0';
               let badgeColor = '#334155';
+              let borderColor = '#c4c6cf';
+              let borderLeftColor = '#1a365d';
 
-              if (isSpeed) {
-                badgeText = '⚡ SPEED VIOLATION';
-                badgeBg = '#e0f2fe';
-                badgeColor = '#0369a1';
-              } else if (isCrit) {
+              if (isCrit) {
                 badgeText = '🚨 CRITICAL WATCHLIST';
                 badgeBg = '#ffdad6';
                 badgeColor = '#ba1a1a';
-              } else if (isHigh) {
-                badgeText = '⚠️ HIGH WATCHLIST';
+                borderColor = '#ba1a1a';
+                borderLeftColor = '#ba1a1a';
+              } else if (isWatchlist) {
+                badgeText = '⚠️ WATCHLIST INTERCEPT';
                 badgeBg = '#ffedd5';
                 badgeColor = '#9a3412';
+                borderColor = '#fe932c';
+                borderLeftColor = '#fe932c';
+              } else if (isSpeed) {
+                badgeText = '⚡ SPEED VIOLATION';
+                badgeBg = '#e0f2fe';
+                badgeColor = '#0369a1';
+                borderColor = '#0284c7';
+                borderLeftColor = '#0284c7';
               }
 
               return (
@@ -366,8 +392,8 @@ export default function AlertFeed({ onWsStatusChange }) {
                   key={a.alert_id || a.id || Math.random()}
                   style={{
                     background: '#ffffff',
-                    border: `1px solid ${isCrit ? '#ba1a1a' : isHigh ? '#fe932c' : isSpeed ? '#0284c7' : '#c4c6cf'}`,
-                    borderLeft: `4px solid ${isCrit ? '#ba1a1a' : isHigh ? '#fe932c' : isSpeed ? '#0284c7' : '#1a365d'}`,
+                    border: `1px solid ${borderColor}`,
+                    borderLeft: `4px solid ${borderLeftColor}`,
                     borderRadius: '4px',
                     padding: '10px 12px',
                     display: 'flex',

@@ -65,9 +65,21 @@ export default function GisMap() {
     fetch(`${API_BASE_URL}/api/v1/cameras`)
       .then(res => res.json())
       .then(data => {
-        if (data && Array.isArray(data)) setCameras(data);
+        if (data && Array.isArray(data) && data.length > 0) {
+          setCameras(data);
+        } else {
+          fetch(`${API_BASE_URL}/api/ingest`)
+            .then(r => r.json())
+            .then(d => { if (Array.isArray(d)) setCameras(d); })
+            .catch(() => {});
+        }
       })
-      .catch(() => {});
+      .catch(() => {
+        fetch(`${API_BASE_URL}/api/ingest`)
+          .then(r => r.json())
+          .then(d => { if (Array.isArray(d)) setCameras(d); })
+          .catch(() => {});
+      });
   }, []);
 
   return (
@@ -167,12 +179,16 @@ export default function GisMap() {
         />
 
         {/* Render Camera Markers */}
-        {cameras.map(cam => (
-          <Marker 
-            key={cam.camera_id} 
-            position={[cam.latitude, cam.longitude]}
-            icon={activeCameraIcon}
-          >
+        {cameras.map((cam, idx) => {
+          const lat = parseFloat(cam.latitude) || 23.0225;
+          const lng = parseFloat(cam.longitude) || 72.5714;
+          const cid = cam.camera_id || cam.id || `CAM-${idx}`;
+          return (
+            <Marker 
+              key={cid} 
+              position={[lat, lng]}
+              icon={activeCameraIcon}
+            >
             <Popup>
               <div style={{ padding: '4px 2px', minWidth: '190px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', marginBottom: '6px' }}>
@@ -198,7 +214,8 @@ export default function GisMap() {
               </div>
             </Popup>
           </Marker>
-        ))}
+        );
+      })}
       </MapContainer>
     </div>
   );

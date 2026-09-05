@@ -31,9 +31,21 @@ async def lifespan(app: FastAPI):
         seed_initial_data(db)
     finally:
         db.close()
+    
     # Start background Kafka consumer for remote analytics results
     import asyncio
     asyncio.create_task(start_detection_consumer())
+    
+    # Start automated background live feed AI ingestion worker thread
+    import threading
+    try:
+        from ingest_live_sentinel_feeds import start_live_ingestion_loop
+        ingest_thread = threading.Thread(target=start_live_ingestion_loop, kwargs={"interval": 15}, daemon=True)
+        ingest_thread.start()
+        logger.info("Automated Continuous Live Stream AI Ingestion Worker launched in backend lifespan.")
+    except Exception as e_ingest:
+        logger.warning(f"Could not auto-start live ingestion worker: {e_ingest}")
+        
     yield
     # Shutdown: clean up Kafka producer
     await shutdown_kafka_producer()

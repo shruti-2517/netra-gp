@@ -7,6 +7,8 @@ from app.database import get_db
 from app.models import Camera
 from app.schemas import CameraCreate, CameraResponse
 
+from app.api.deps import get_current_active_user, get_optional_current_user, verify_department_access
+
 router = APIRouter(prefix="/cameras", tags=["Cameras"])
 
 @router.get("", response_model=List[CameraResponse])
@@ -15,12 +17,13 @@ def get_cameras(
     department: Optional[str] = Query(None, description="Filter cameras by department"),
     status: Optional[str] = Query(None, description="Filter cameras by status"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: Optional[User] = Depends(get_optional_current_user)
 ):
     query = db.query(Camera)
     
-    if current_user.role.name != "Superadmin":
-        query = query.filter(Camera.department == current_user.department.name)
+    if current_user and hasattr(current_user, 'role') and current_user.role and current_user.role.name != "Superadmin":
+        if hasattr(current_user, 'department') and current_user.department:
+            query = query.filter(Camera.department == current_user.department.name)
     elif department:
         query = query.filter(Camera.department.ilike(f"%{department}%"))
         

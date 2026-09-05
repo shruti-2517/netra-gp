@@ -10,6 +10,7 @@ from app.schemas import TokenData
 from app.config import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/token")
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/token", auto_error=False)
 
 def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)) -> User:
     credentials_exception = HTTPException(
@@ -30,6 +31,18 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
     if user is None:
         raise credentials_exception
     return user
+
+def get_optional_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme_optional)):
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        username: str = payload.get("sub")
+        if username:
+            return db.query(User).filter(User.username == username).first()
+    except Exception:
+        pass
+    return None
 
 def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
     if not current_user.is_active:
