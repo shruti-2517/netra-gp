@@ -21,9 +21,9 @@ These networks operate in deep silos:
 It unifies the fragmented camera networks into a single operational command center through a **Model 1 + Model 2 Hybrid Architecture**:
 
 1. **Model 1 (Spatial Registry & GIS Command Map)**: Centralized PostGIS database indexing all cameras across Gujarat with geo-coordinates, live operational health status, streaming endpoints, and departmental ownership.
-2. **Model 2 (Unified Video Wall & Edge ANPR Analytics)**: Real-time multi-stream video ingestion, YOLOv8 vehicle detection, EasyOCR plate recognition with Indian syntax normalization (`GJ-01-AB-1234`), fuzzy watchlist matching, and sub-second WebSocket alert dispatch.
+2. **Model 2 (Unified Video Wall & Edge ANPR Analytics)**: Real-time multi-stream video ingestion, YOLOv8 vehicle detection, EasyOCR plate recognition with strict Indian HSRP syntax normalization (7–10 characters, state code preservation `TN`, `MH`, `DL`, `GJ`, `KA`, `KL`, `UP`, `RJ`, etc.), fuzzy watchlist matching, and sub-second WebSocket alert dispatch.
 3. **Phase 2 Advanced Intelligence & Statutory Compliance**:
-   - **Inter-Camera Average Speed Violation Engine**: Calculates transit velocity ($v = \Delta d / \Delta t$) across consecutive highway checkpoints.
+   - **Dual Speed Violation Engine**: Calculates section transit speed ($v = \Delta d / \Delta t$) across multi-camera highway checkpoints and optical centroid velocity tracking ($\Delta p / H_{\text{box}}$) on single camera feeds, calibrated against compliant traffic flows (15–78 km/h compliant, >80 km/h overspeeding).
    - **Vehicle Make, Model, Color (VMMC) & Re-ID**: Classifies vehicle body type and HSV color for tracking vehicles with fake or obscured plates.
    - **Predictive Interception Routing**: Calculates vehicle escape vectors and predicts downstream checkpoints with estimated arrival times (ETA) for patrol intercept dispatch.
    - **Bharatiya Sakshya Adhiniyam (BSA 2023) Compliant Evidence Vault**: Computes FIPS SHA-256 digital seals on detection frames and generates court-admissible e-Challan dossiers under Section 63 of BSA 2023.

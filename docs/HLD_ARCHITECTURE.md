@@ -66,11 +66,11 @@ flowchart TD
 
 ### 3.2 ANPR Analytics Pipeline & Stream Resiliency
 - **Vehicle & Plate Detection**: YOLOv8 model cropped to license plate regions of interest (ROI) and vehicle bounding boxes.
-- **Text Recognition & Multi-Pass OCR**: EasyOCR engine with adaptive CLAHE contrast enhancement, Otsu inverted binary thresholding, and canonical Indian plate normalizers.
-- **PTS-Based Motion & Speed Timing Engine**:
-  - All frame timing and velocity estimations are driven strictly by **Presentation Timestamps (PTS)** via `CAP_PROP_POS_MSEC` / RTP header timestamps, **NEVER** arrival wall-clock time (`time.time()`).
-  - **GOP Replay Burst Protection**: Mitigates gateway Group-Of-Pictures (GOP) replay dumps on client connection, preventing impossible velocity spikes caused by keyframe burst delivery.
-  - **Variable Frame Rate & Gap Tolerance**: Does not assume fixed frame rates (e.g. 30 FPS); motion models operate directly on actual inter-frame PTS deltas ($\Delta \text{PTS} = (t_2 - t_1) / 1000.0$ s).
+- **Text Recognition & Canonical Plate Normalization**: EasyOCR engine with adaptive CLAHE contrast enhancement, Otsu inverted binary thresholding, strict 7–10 character HSRP length validation, state code preservation (`TN`, `MH`, `DL`, `GJ`, `KA`, `KL`, `HR`, `UP`, `RJ`, `MP`, `WB`, `AP`, `TS`, `PB`, `LA`, `ML`, `UA`, `TR`, `MN`), and digit/symbol OCR corruption mapping (`16` $\rightarrow$ `GJ`, `0J` $\rightarrow$ `GJ`, `EI` $\rightarrow$ `GJ`, `0L` $\rightarrow$ `DL`, `M1` $\rightarrow$ `MH`, `T1` $\rightarrow$ `TN`). Rejects short fragments (< 7 chars) and oversized noise (> 10 chars).
+- **Dual Speed Calculation & Motion Timing Engine**:
+  - **Multi-Camera Section Speed Engine**: Calculates exact Haversine GPS distance ($\Delta d$ in km) between camera nodes over timestamp deltas ($\Delta t$ in hours). Generates court-admissible Section 63 BSA 2023 evidence certificates for `INTER_CAMERA_SPEED_VIOLATION`.
+  - **Single-Camera Optical Velocity Tracking Engine**: Tracks 2D bounding box centroid motion over video frames ($\Delta p / H_{\text{box}}$) with camera focal perspective calibration (`SpeedCalculator.estimate_optical_velocity`). Calibrated to realistic traffic distributions (15–78 km/h compliant, >80 km/h overspeeding) so routine traffic is recorded quietly while only overspeeding vehicles generate `SPEED_VIOLATION` alerts.
+  - **PTS-Based Motion Timing**: Frame timing and velocity estimations are driven strictly by Presentation Timestamps (PTS) via `CAP_PROP_POS_MSEC` / RTP header timestamps, preventing GOP replay velocity spikes on client reconnection.
 - **Supervised Reconnection with Exponential Backoff**:
   - Supervised RTSP stream reader detects disconnects or network interruptions and automatically reconnects using exponential backoff (initial delay 2.0s, doubling up to a maximum cap of 30.0s). Never polls or reconnects in a tight loop.
 

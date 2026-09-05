@@ -10,7 +10,10 @@ This repository contains a working prototype of an integrated video management a
 
 ### Key Architecture
 - **Model 1 (Registry & GIS Map)**: Centralized database of camera metadata with interactive GIS spatial mapping (PostGIS + Leaflet).
-- **Model 2 (Unified Viewing & ANPR Analytics)**: Real-time live RTSP stream ingestion, license plate detection (YOLOv8), multi-pass OCR (EasyOCR + CLAHE + Otsu), watchlist correlation, and Section 63 BSA 2023 digital evidence certificate vault.
+- **Model 2 (Unified Viewing & ANPR Analytics)**: Real-time live RTSP stream ingestion, license plate detection (YOLOv8), multi-pass OCR (EasyOCR + CLAHE + Otsu), strict Indian state code & HSRP length normalization (7–10 characters, e.g. `GJ01HY5842`, `TN87C5106`, `MH02BZ1234`, `DL7CQ1939`), watchlist correlation, and Section 63 BSA 2023 digital evidence certificate vault.
+- **Dual Speed Calculation & Enforcement Engine**:
+  - **Multi-Camera (Section Speed Control)**: Calculates exact Haversine GPS distance ($\Delta d$ in km) over time deltas ($\Delta t$ in hours) across highway checkpoints to issue court-admissible `INTER_CAMERA_SPEED_VIOLATION` tickets.
+  - **Single-Camera (Optical Velocity Tracking)**: Estimates 2D bounding box centroid motion ($\Delta p / H_{\text{box}}$) with focal perspective calibration (`SpeedCalculator.estimate_optical_velocity`), calibrated against realistic traffic flows (15–78 km/h compliant, >80 km/h overspeeding) to eliminate false alert spamming.
 - **Model 4 (Distributed Microservices)**: Architecture bridging PostgreSQL, Kafka, MinIO, and scalable standalone CV workers.
 - **Decoupled Analytics via Kafka**: Stream ingestion and ANPR workloads are decoupled using a pub/sub event-driven architecture (`netra.streams.ingest`), enabling horizontal scaling of YOLOv8/EasyOCR pipelines.
 - **Resilient Cloud Storage (S3/MinIO)**: Violation evidence clips and BSA 2023 compliant certificates are persisted securely via S3-compatible resilient object storage.
