@@ -22,14 +22,14 @@ export default function CameraRegistry() {
   });
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/v1/cameras`)
+    fetch(`${API_BASE_URL}/api/v1/cameras`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         if (data && Array.isArray(data) && data.length >= 30) {
           setCameras(data);
         } else {
           // Fallback to catalogue endpoint if DB has fewer entries
-          fetch(`${API_BASE_URL}/api/ingest`)
+          fetch(`${API_BASE_URL}/api/ingest`, { credentials: 'include' })
             .then(res => res.json())
             .then(ingestData => {
               if (ingestData && Array.isArray(ingestData)) {
@@ -60,6 +60,7 @@ export default function CameraRegistry() {
     fetch(`${API_BASE_URL}/api/v1/cameras`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(created)
     }).catch(() => {});
   };

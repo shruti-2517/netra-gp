@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Shield, Lock, Eye, EyeOff, User, ArrowRight, Clock, Fingerprint } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+import { API_BASE_URL } from '../config';
+
 export default function Login() {
     const { login } = useAuth();
     const [showPassword, setShowPassword] = useState(false);
@@ -29,15 +31,50 @@ export default function Login() {
         'GP-5005': { password: 'password123', roleKey: 'VIEWER', name: 'Viewer M. Desai', designation: 'Executive Secretariat' }
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         setErrorMsg('');
 
-        setTimeout(() => {
-            const formattedBadge = badgeNumber.trim().toUpperCase();
-            const userRecord = MOCK_USERS[formattedBadge];
+        const formattedBadge = badgeNumber.trim().toUpperCase();
 
+        try {
+            const formData = new URLSearchParams();
+            formData.append('username', formattedBadge);
+            formData.append('password', password);
+
+            const res = await fetch(`${API_BASE_URL}/api/v1/auth/token`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                credentials: 'include',
+                body: formData
+            });
+
+            if (res.ok) {
+                const meRes = await fetch(`${API_BASE_URL}/api/v1/auth/me`, {
+                    credentials: 'include'
+                });
+
+                if (meRes.ok) {
+                    const profile = await meRes.json();
+                    login(profile.role_key || 'SUPER_ADMIN', {
+                        name: profile.full_name || formattedBadge,
+                        badgeNumber: formattedBadge,
+                        designation: profile.designation || profile.department
+                    });
+                } else {
+                    const userRecord = MOCK_USERS[formattedBadge] || { roleKey: 'SUPER_ADMIN', name: formattedBadge, designation: 'Officer' };
+                    login(userRecord.roleKey, {
+                        name: userRecord.name,
+                        badgeNumber: formattedBadge,
+                        designation: userRecord.designation
+                    });
+                }
+            } else {
+                setErrorMsg('Invalid Badge ID or Password');
+            }
+        } catch (err) {
+            const userRecord = MOCK_USERS[formattedBadge];
             if (userRecord && userRecord.password === password) {
                 login(userRecord.roleKey, {
                     name: userRecord.name,
@@ -47,8 +84,9 @@ export default function Login() {
             } else {
                 setErrorMsg('Invalid Badge ID or Password');
             }
+        } finally {
             setIsLoading(false);
-        }, 800);
+        }
     };
 
     return (

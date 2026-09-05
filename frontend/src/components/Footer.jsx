@@ -15,7 +15,7 @@ export default function Footer({ cameraCount: propCameraCount = 30, wsConnected 
       .then(() => setApiOnline(true))
       .catch(() => setApiOnline(false));
 
-    fetch(`${API_BASE_URL}/api/v1/cameras`)
+    fetch(`${API_BASE_URL}/api/v1/cameras`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         if (data && Array.isArray(data) && data.length > 0) {

@@ -20,7 +20,9 @@ export default function WatchlistManager() {
   });
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/v1/watchlist`)
+    fetch(`${API_BASE_URL}/api/v1/watchlist`, {
+      credentials: 'include'
+    })
       .then(res => res.json())
       .then(data => {
         if (data && Array.isArray(data)) setWatchlist(data);
@@ -39,7 +41,10 @@ export default function WatchlistManager() {
 
     fetch(`${API_BASE_URL}/api/v1/watchlist`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include',
       body: JSON.stringify(created)
     }).catch(() => {});
   };

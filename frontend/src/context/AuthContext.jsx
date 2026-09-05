@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { API_BASE_URL } from '../config';
 
 export const ROLES = {
   SUPER_ADMIN: {
@@ -66,17 +67,65 @@ export const ROLES = {
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentRole, setCurrentRole] = useState(ROLES.SUPER_ADMIN);
-  const [user, setUser] = useState({
-    name: 'Inspector V. Jadeja',
-    badgeNumber: 'GP-8841',
-    designation: 'Senior Surveillance Officer'
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return localStorage.getItem('netra_is_logged_in') === 'true';
   });
+
+  const [currentRole, setCurrentRole] = useState(() => {
+    const savedRole = localStorage.getItem('netra_role_key');
+    return ROLES[savedRole] || ROLES.SUPER_ADMIN;
+  });
+
+  const [user, setUser] = useState(() => {
+    const savedUser = localStorage.getItem('netra_user_data');
+    if (savedUser) {
+      try { return JSON.parse(savedUser); } catch (e) {}
+    }
+    return {
+      name: 'Inspector V. Jadeja',
+      badgeNumber: 'GP-1001',
+      designation: 'Senior Surveillance Officer'
+    };
+  });
+
+  // Verify session on mount via HttpOnly cookie to /api/v1/auth/me
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/api/v1/auth/me`, {
+      credentials: 'include'
+    })
+      .then(res => {
+        if (res.ok) return res.json();
+        throw new Error('Unauthenticated');
+      })
+      .then(profile => {
+        if (profile) {
+          const roleKey = profile.role_key || 'SUPER_ADMIN';
+          if (ROLES[roleKey]) setCurrentRole(ROLES[roleKey]);
+          const userData = {
+            name: profile.full_name || profile.username,
+            badgeNumber: profile.badge_number || profile.username,
+            designation: profile.designation || profile.department
+          };
+          setUser(userData);
+          setIsLoggedIn(true);
+          localStorage.setItem('netra_is_logged_in', 'true');
+          localStorage.setItem('netra_role_key', roleKey);
+          localStorage.setItem('netra_user_data', JSON.stringify(userData));
+        }
+      })
+      .catch(() => {
+        setIsLoggedIn(false);
+        localStorage.removeItem('netra_is_logged_in');
+        localStorage.removeItem('netra_role_key');
+        localStorage.removeItem('netra_user_data');
+        localStorage.removeItem('netra_token');
+      });
+  }, []);
 
   const switchRole = (roleKey) => {
     if (ROLES[roleKey]) {
       setCurrentRole(ROLES[roleKey]);
+      localStorage.setItem('netra_role_key', roleKey);
     }
   };
 
@@ -87,15 +136,28 @@ export function AuthProvider({ children }) {
   const login = (roleKey, userData) => {
     if (ROLES[roleKey]) {
       setCurrentRole(ROLES[roleKey]);
+      localStorage.setItem('netra_role_key', roleKey);
     }
     if (userData) {
       setUser(userData);
+      localStorage.setItem('netra_user_data', JSON.stringify(userData));
     }
     setIsLoggedIn(true);
+    localStorage.setItem('netra_is_logged_in', 'true');
   };
 
   const logout = () => {
-    setIsLoggedIn(false);
+    fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
+      method: 'POST',
+      credentials: 'include'
+    }).finally(() => {
+      localStorage.removeItem('netra_token');
+      localStorage.removeItem('netra_is_logged_in');
+      localStorage.removeItem('netra_role_key');
+      localStorage.removeItem('netra_user_data');
+      setIsLoggedIn(false);
+      setUser(null);
+    });
   };
 
   return (

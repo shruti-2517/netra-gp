@@ -62,20 +62,20 @@ export default function GisMap() {
   const [mapTarget, setMapTarget] = useState({ center: [22.2587, 71.1924], zoom: 7 });
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/v1/cameras`)
+    fetch(`${API_BASE_URL}/api/v1/cameras`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         if (data && Array.isArray(data) && data.length > 0) {
           setCameras(data);
         } else {
-          fetch(`${API_BASE_URL}/api/ingest`)
+          fetch(`${API_BASE_URL}/api/ingest`, { credentials: 'include' })
             .then(r => r.json())
             .then(d => { if (Array.isArray(d)) setCameras(d); })
             .catch(() => {});
         }
       })
       .catch(() => {
-        fetch(`${API_BASE_URL}/api/ingest`)
+        fetch(`${API_BASE_URL}/api/ingest`, { credentials: 'include' })
           .then(r => r.json())
           .then(d => { if (Array.isArray(d)) setCameras(d); })
           .catch(() => {});

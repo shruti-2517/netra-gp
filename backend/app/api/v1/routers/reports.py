@@ -8,10 +8,13 @@ from app.database import get_db
 from app.models import DetectionEvent, Alert, Camera, EvidenceCertificate
 from app.schemas import EvidenceCertificateResponse
 
+from app.api.deps import get_current_active_user, get_optional_current_user
+from app.models import User
+
 router = APIRouter(prefix="/reports", tags=["Reports & Export"])
 
 @router.get("/export-csv")
-def export_detections_csv(db: Session = Depends(get_db)):
+def export_detections_csv(db: Session = Depends(get_db), current_user: Optional[User] = Depends(get_optional_current_user)):
     """
     Exports all timestamped ANPR detection events and watchlist hits as a downloadable CSV report.
     """

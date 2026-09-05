@@ -32,9 +32,18 @@ logger = logging.getLogger("LiveFeedIngest")
 email_enc = urllib.parse.quote(settings.SENTINEL_EMAIL)
 pass_enc = urllib.parse.quote(settings.SENTINEL_PASS)
 
-model_path = os.path.join(root_dir, "cv_engine", "yolov8n.pt")
-if not os.path.exists(model_path):
-    model_path = "yolov8n.pt"
+candidate_model_paths = [
+    os.path.join(root_dir, "cv_engine", "yolov8n.pt"),
+    os.path.join(backend_dir, "..", "cv_engine", "yolov8n.pt"),
+    "cv_engine/yolov8n.pt",
+    "../cv_engine/yolov8n.pt",
+    "yolov8n.pt"
+]
+model_path = "yolov8n.pt"
+for candidate in candidate_model_paths:
+    if os.path.exists(candidate):
+        model_path = candidate
+        break
 
 logger.info(f"Loading YOLOv8 from {model_path} and initializing EasyOCR...")
 model = YOLO(model_path)

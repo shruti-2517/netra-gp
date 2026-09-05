@@ -110,6 +110,8 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(50), unique=True, index=True, nullable=False)
     hashed_password = Column(String(255), nullable=False)
+    full_name = Column(String(100), nullable=True)
+    designation = Column(String(100), nullable=True)
     is_active = Column(Boolean, default=True)
     department_id = Column(Integer, ForeignKey("departments.id"), nullable=False)
     role_id = Column(Integer, ForeignKey("roles.id"), nullable=False)

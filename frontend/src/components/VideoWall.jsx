@@ -57,6 +57,7 @@ function CameraCanvasFeed({ cam, isWebcamMode, webcamStream, uploadedImage, onPl
       fetch(`${API_BASE_URL}/api/v1/detections/scan-frame`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           image_base64: uploadedImage,
           camera_id: 'CAM-UPLOAD-SCAN'
@@ -187,7 +188,7 @@ export default function VideoWall() {
 
   // Dynamically fetch camera catalogue from backend API (/api/ingest)
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/ingest`)
+    fetch(`${API_BASE_URL}/api/ingest`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         if (data && Array.isArray(data) && data.length > 0) {

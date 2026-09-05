@@ -62,7 +62,7 @@ export default function RouteTracker() {
     setLoading(true);
     
     // 1. Fetch historical route waypoints
-    fetch(`${API_BASE_URL}/api/v1/tracking/${plate}`)
+    fetch(`${API_BASE_URL}/api/v1/tracking/${plate}`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         if (data && data.waypoints) {
@@ -74,7 +74,7 @@ export default function RouteTracker() {
       .catch(() => setRouteData({ license_plate: plate, total_detections: 0, waypoints: [] }));
 
     // 2. Fetch predictive interception forecast
-    fetch(`${API_BASE_URL}/api/v1/tracking/${plate}/predict`)
+    fetch(`${API_BASE_URL}/api/v1/tracking/${plate}/predict`, { credentials: 'include' })
       .then(res => res.json())
       .then(pred => {
         if (pred && pred.predicted_checkpoints) {
@@ -91,7 +91,7 @@ export default function RouteTracker() {
 
   // Fetch actual live detected plates from backend API
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/v1/alerts`)
+    fetch(`${API_BASE_URL}/api/v1/alerts`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data) && data.length > 0) {

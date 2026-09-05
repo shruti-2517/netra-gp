@@ -12,7 +12,7 @@ export default function EvidenceVault() {
 
   const fetchCertificates = () => {
     setLoading(true);
-    fetch(`${API_BASE_URL}/api/v1/reports/certificates`)
+    fetch(`${API_BASE_URL}/api/v1/reports/certificates`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
@@ -35,7 +35,7 @@ export default function EvidenceVault() {
   const openEChallanModal = (cert) => {
     setSelectedCert(cert);
     setDossierLoading(true);
-    fetch(`${API_BASE_URL}/api/v1/reports/echallan/${cert.certificate_id}`)
+    fetch(`${API_BASE_URL}/api/v1/reports/echallan/${cert.certificate_id}`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         setDossier(data);

@@ -78,30 +78,99 @@ def seed_initial_data(db: Session):
     # 3. Detection Events, Alerts, & BSA 2023 Evidence Certificates are generated directly from live video feed evaluations.
     logger.info("Database seeding completed. Live feed evaluation ready.")
 
-    # 4. Seed Auth (Roles, Departments, Superadmin)
-    if db.query(Role).count() == 0:
-        admin_role = Role(name="Superadmin")
-        viewer_role = Role(name="Viewer")
-        db.add_all([admin_role, viewer_role])
-        db.commit()
-        
-    if db.query(Department).count() == 0:
-        hq_dept = Department(name="HQ Traffic Police", description="Headquarters")
-        civil_dept = Department(name="Civil Supplies", description="Food & Civil Supplies")
-        db.add_all([hq_dept, civil_dept])
-        db.commit()
-    
-    if db.query(User).count() == 0:
-        admin_r = db.query(Role).filter(Role.name=="Superadmin").first()
-        hq_d = db.query(Department).filter(Department.name=="HQ Traffic Police").first()
-        if admin_r and hq_d:
-            admin_user = User(
-                username="admin",
-                hashed_password=pwd_context.hash("admin123"),
-                department_id=hq_d.id,
-                role_id=admin_r.id,
-                is_active=True
-            )
-            db.add(admin_user)
-            db.commit()
-            logger.info("Seeded initial Superadmin user and Auth tables.")
+    # 4. Seed Auth (Roles, Departments, Superadmin + Badge ID Officers)
+    from app.security import get_password_hash
+
+    roles_data = [
+        {"name": "Superadmin"},
+        {"name": "Operator"},
+        {"name": "Investigator"},
+        {"name": "Department Admin"},
+        {"name": "Viewer"}
+    ]
+    for r in roles_data:
+        if not db.query(Role).filter(Role.name == r["name"]).first():
+            db.add(Role(name=r["name"]))
+    db.commit()
+
+    depts_data = [
+        {"name": "State Police HQ", "description": "Statewide Command Headquarters"},
+        {"name": "Command & Control Room", "description": "24/7 Operations & Surveillance"},
+        {"name": "Crime Branch / CID", "description": "Criminal Investigation Division"},
+        {"name": "Ahmedabad Traffic Zone", "description": "Urban Traffic Management"},
+        {"name": "Executive Secretariat", "description": "Executive Overview & Audit"}
+    ]
+    for d in depts_data:
+        if not db.query(Department).filter(Department.name == d["name"]).first():
+            db.add(Department(name=d["name"], description=d["description"]))
+    db.commit()
+
+    users_seed_map = [
+        {
+            "username": "GP-1001",
+            "password": "password123",
+            "full_name": "Inspector V. Jadeja",
+            "designation": "Senior Surveillance Officer",
+            "role": "Superadmin",
+            "department": "State Police HQ"
+        },
+        {
+            "username": "GP-2002",
+            "password": "password123",
+            "full_name": "Operator R. Patel",
+            "designation": "Control Room Operator",
+            "role": "Operator",
+            "department": "Command & Control Room"
+        },
+        {
+            "username": "GP-3003",
+            "password": "password123",
+            "full_name": "Officer S. Mehta",
+            "designation": "Investigation Officer",
+            "role": "Investigator",
+            "department": "Crime Branch / CID"
+        },
+        {
+            "username": "GP-4004",
+            "password": "password123",
+            "full_name": "Admin K. Shah",
+            "designation": "Department Administrator",
+            "role": "Department Admin",
+            "department": "Ahmedabad Traffic Zone"
+        },
+        {
+            "username": "GP-5005",
+            "password": "password123",
+            "full_name": "Viewer M. Desai",
+            "designation": "Executive Viewer",
+            "role": "Viewer",
+            "department": "Executive Secretariat"
+        },
+        {
+            "username": "admin",
+            "password": "admin123",
+            "full_name": "System Administrator",
+            "designation": "State Police HQ Admin",
+            "role": "Superadmin",
+            "department": "State Police HQ"
+        }
+    ]
+
+    for u_info in users_seed_map:
+        existing = db.query(User).filter(User.username == u_info["username"]).first()
+        if not existing:
+            role_obj = db.query(Role).filter(Role.name == u_info["role"]).first()
+            dept_obj = db.query(Department).filter(Department.name == u_info["department"]).first()
+            if role_obj and dept_obj:
+                user_obj = User(
+                    username=u_info["username"],
+                    hashed_password=get_password_hash(u_info["password"]),
+                    full_name=u_info["full_name"],
+                    designation=u_info["designation"],
+                    role_id=role_obj.id,
+                    department_id=dept_obj.id,
+                    is_active=True
+                )
+                db.add(user_obj)
+    db.commit()
+    logger.info("Seeded initial Auth roles, departments, Superadmin, and Officer Badge accounts into DB.")

@@ -32,7 +32,7 @@ export default function AlertFeed({ onWsStatusChange }) {
 
   // 1. Fetch latest alerts from REST API
   const fetchAlerts = () => {
-    fetch(`${API_BASE_URL}/api/v1/alerts`)
+    fetch(`${API_BASE_URL}/api/v1/alerts`, { credentials: 'include' })
       .then(res => res.json())
       .then(data => {
         if (data && Array.isArray(data)) {
@@ -101,7 +101,7 @@ export default function AlertFeed({ onWsStatusChange }) {
   }, [isSoundEnabled]);
 
   const handleClearAlerts = () => {
-    fetch(`${API_BASE_URL}/api/v1/alerts`, { method: 'DELETE' })
+    fetch(`${API_BASE_URL}/api/v1/alerts`, { method: 'DELETE', credentials: 'include' })
       .then(res => res.json())
       .then(() => {
         setAlerts([]);
